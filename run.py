@@ -13,6 +13,7 @@ r"""
 # 导入常用模块
 from enum import Enum
 from pathlib import Path
+from turtle import width
 
 from nicegui import app, native, ui
 
@@ -72,14 +73,15 @@ async def _() -> None:
         ui.button(text="读取")
         ui.button(text="保存")
         ui.button(text="命名规则")
-
     # ************登录页面************
-    with ui.left_drawer(value=True).classes("bg-blue-grey-1").props("width=200px"):
+    with ui.left_drawer(value=True).classes("bg-blue-grey-1").style("width: 150px!important;"):
         ui.button(text="创建顶级命名")
         ui.button(text="前")
         ui.button(text="后")
         ui.space()
         ui.button(text="粘贴")
+    with ui.card():
+        ui.label("你好")
 
     # ************主页************
 
