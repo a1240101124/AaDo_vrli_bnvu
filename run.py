@@ -14,7 +14,7 @@ r"""
 from enum import Enum
 from pathlib import Path
 
-from nicegui import native, ui
+from nicegui import app, native, ui
 
 from 读写M import 配置C
 from 配置M import 常量_后缀, 常量_标题, 常量_第一位, 常量_第三位, 常量_第二位, 常量_第四位, 常量_路径, 常量_连接符
@@ -67,8 +67,21 @@ def 配置初始化F():
 ####################################界面#############################################
 @ui.page(path="/")
 async def _() -> None:
-    ui.label("欢迎")
+    # ************页眉************
+    with ui.header(elevated=True).style("background-color: #3874c8"):
+        ui.button(text="读取")
+        ui.button(text="保存")
+        ui.button(text="命名规则")
 
+    # ************登录页面************
+    with ui.left_drawer(value=True).classes("bg-blue-grey-1").props("width=200px"):
+        ui.button(text="创建顶级命名")
+        ui.button(text="前")
+        ui.button(text="后")
+        ui.space()
+        ui.button(text="粘贴")
+
+    # ************主页************
 
 ####################################入口#############################################
 if __name__ in {"__main__", "__mp_main__"}:
@@ -76,8 +89,8 @@ if __name__ in {"__main__", "__mp_main__"}:
     ui.run(
         title=常量_标题,
         favicon=常量_图标路径,
-        reload=False,
+        reload=True,  # 打包时，记得禁用
         port=native.find_open_port(),
         native=True,
-        window_size=(1366, 900),
+        window_size=(1030, 760),
     )
