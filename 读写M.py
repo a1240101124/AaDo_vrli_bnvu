@@ -116,7 +116,7 @@ class 项目C:
             print(f"保存数据时发生错误: {e}")
             self.conn.rollback()
 
-    def 读取F(self):
+    def 读取F(self) -> list:
         result = []
         try:
             # 不包含 id 列的查询

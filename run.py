@@ -13,11 +13,10 @@ r"""
 # 导入常用模块
 from enum import Enum
 from pathlib import Path
-from turtle import width
 
-from nicegui import app, native, ui
-
-from 读写M import 配置C
+from nicegui import native, ui
+from tools.local_file_picker import local_file_picker
+from 读写M import 配置C, 项目C
 from 配置M import (
     常量_一级_位置,
     常量_三极_位置,
@@ -77,16 +76,13 @@ def 配置初始化F():
     连接符_索引G = 配置VL[5]
 
 
-####################################事件方法#############################################
-
-
 ####################################界面#############################################
 @ui.page(path="/")
 async def _() -> None:
     # ************页眉************
     with ui.header(elevated=True).style("background-color: #3874c8"):
-        ui.button(text="读取", icon="file_open", color="secondary")
-        ui.button(text="保存")
+        ui.button(text="读取", icon="file_open", on_click=读取文件F, color="secondary")
+        ui.button(text="保存", on_click=保存文件F)
         ui.space()
         ui.button(text="命名规则")
 
@@ -102,6 +98,37 @@ async def _() -> None:
     with ui.element("div"):
         with ui.card():
             ui.label("你好")
+
+
+####################################事件方法#############################################
+async def 读取文件F() -> None:
+    global 标注GL
+
+    await 获取路径F()
+
+    if 是否_sqlite(项目路径G):
+        项目O = 项目C(项目路径G)
+        标注GL = 项目O.读取F()
+        项目O.关闭连接F()
+    else:
+        ui.notify("你选中的文件不是db文件，请重新选择！")
+
+
+async def 保存文件F() -> None:
+    global 标注GL
+
+    await 获取路径F()
+
+
+async def 获取路径F() -> None:
+    global 项目路径G
+    项目路径G = await local_file_picker("~", multiple=True)
+    print("读取到的文件或目录路径：", 项目路径G)
+
+
+def 是否_sqlite(path: Path):
+    扩展名V: str = path.suffix.lower()
+    return 扩展名V in [".sqlite", ".sqlite3", ".db"]
 
 
 ####################################入口#############################################
