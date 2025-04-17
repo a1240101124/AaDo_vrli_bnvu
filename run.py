@@ -31,6 +31,7 @@ from 配置M import (
     常量_第四位,
     常量_路径,
     常量_连接符,
+    常量_颜色,
 )
 
 ####################################配置参数#############################################
@@ -49,6 +50,9 @@ from 配置M import (
 
 连接符_索引G: int = 0
 连接符_默认GS: str = ""
+
+当前标签G: int = 0
+
 
 class 等级E(Enum):
     一 = 1
@@ -112,6 +116,7 @@ async def _() -> None:
     with ui.element("div"):
         with ui.card():
             ui.label("你好")
+            标签C(1, "你好")
 
 class 命名规则面板C(ui.dialog):
     def __init__(
@@ -174,6 +179,43 @@ class 命名规则面板C(ui.dialog):
         连接符_默认GS = 常量_连接符[连接符_索引G]
 
         配置O.写入配置F(第二位_索引G, 第三位_索引G, 第四位_风格G, 第四位_索引G, 后缀_风格G, 连接符_索引G)  # type: ignore
+
+
+class 标签C(ui.card):
+    def __init__(self, 序号V: int, text: str = "  ") -> None:
+        super().__init__()
+
+        with self, ui.row().classes("rounded-full space-x-2 p-2").style("width: fit-content"):
+            self.checkbox = ui.checkbox(value=False, on_change=lambda: self.更改当前标签F(序号V))
+            self.lable = ui.label(text).on("click", lambda: self.更改F())
+            ui.button(icon="add_circle").classes("p-1 rounded-full bg-transparent border-none")
+            ui.button(icon="cancel").classes("p-1 rounded-full bg-transparent border-none")
+
+    def 更改当前标签F(self, 序号V):
+        global 当前标签G
+        if self.checkbox.value:
+            self.前_标签V = 当前标签G
+            当前标签G = 序号V
+        else:
+            当前标签G = self.前_标签V
+
+        print("当前标签序号为：", 当前标签G)
+
+    async def 更改F(self):
+        输入V = await 输入框C()
+        self.lable.set_text(输入V)
+
+
+class 输入框C(ui.dialog):
+    def __init__(self, *, value: bool = False) -> None:
+        super().__init__(value=value)
+
+        with self, ui.card().classes("p-4"):
+            with ui.row().classes("w-full items-center space-x-2"):
+                self.输入V = ui.input(placeholder="请输入零件名").props("square outlined dense").classes("flex-1")
+                ui.button(icon="check", on_click=lambda: self.submit(self.输入V.value)).classes(
+                    "p-2 rounded-full bg-blue-500 text-white"
+                )
 
 
 ####################################事件方法#############################################
