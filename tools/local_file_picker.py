@@ -23,6 +23,9 @@ class local_file_picker(ui.dialog):
             upper_limit: 文件选择器能到达的最高目录。(None: 无限制，默认值:开始的目录)。
             multiple: 是否允许选择多个文件。
             show_hidden_files: 是否显示隐藏文件。
+
+        return:
+            元素为Path对象的列表。
         """
         super().__init__()
 

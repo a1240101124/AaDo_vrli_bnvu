@@ -65,7 +65,17 @@ class 等级E(Enum):
 
 ####################################初始化#############################################
 def 配置初始化F():
-    global 第二位_索引G, 第三位_索引G, 第四位_风格G, 第四位_索引G, 后缀_风格G, 连接符_索引G
+    global \
+        第二位_索引G, \
+        第三位_索引G, \
+        第四位_风格G, \
+        第四位_索引G, \
+        后缀_风格G, \
+        连接符_索引G, \
+        第四位_默认GL, \
+        后缀_默认GL, \
+        连接符_默认GS
+
     配置VL: tuple = 配置O.读取配置F()
 
     第二位_索引G = 配置VL[0]
@@ -74,6 +84,10 @@ def 配置初始化F():
     第四位_索引G = 配置VL[3]
     后缀_风格G = 配置VL[4]
     连接符_索引G = 配置VL[5]
+
+    第四位_默认GL = 常量_第四位[第四位_风格G]
+    后缀_默认GL = 常量_后缀[后缀_风格G]
+    连接符_默认GS = 常量_连接符[连接符_索引G]
 
 
 ####################################界面#############################################
@@ -84,7 +98,7 @@ async def _() -> None:
         ui.button(text="读取", icon="file_open", on_click=读取文件F, color="secondary")
         ui.button(text="保存", on_click=保存文件F)
         ui.space()
-        ui.button(text="命名规则")
+        ui.button(text="命名规则", on_click=lambda: 命名规则面板C())
 
     # ************侧边栏************
     with ui.left_drawer(value=True).classes("bg-blue-grey-1").style("width: 150px!important;"):
@@ -99,6 +113,68 @@ async def _() -> None:
         with ui.card():
             ui.label("你好")
 
+class 命名规则面板C(ui.dialog):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__()
+
+        with self, ui.card().classes("p-4"):
+            ui.label("**********命名规则**********")
+
+            with ui.row().classes("w-full"):
+                ui.label("第二位初始值：")
+                self.toggle1 = ui.toggle({0: "无", 1: "0"}, value=1)
+
+            with ui.row().classes("w-full"):
+                ui.label("第三位初始值：")
+                self.toggle2 = ui.toggle({0: "无", 1: "0"}, value=1)
+
+            with ui.row().classes("w-full"):
+                ui.label("第四位风格：")
+                self.toggle3 = ui.toggle({0: "数字", 1: "字母"}, value=1)
+
+            with ui.row().classes("w-full"):
+                ui.label("第四位初始值：")
+                self.toggle4 = ui.toggle({0: "无", 1: "0/a"}, value=0)
+
+            with ui.row().classes("w-full"):
+                ui.label("后缀风格：")
+                self.toggle5 = ui.toggle({0: "中文数字", 1: "罗马数字"}, value=0)
+
+            with ui.row().classes("w-full"):
+                ui.label("连接符类型")
+                self.toggle6 = ui.toggle({0: "无", 1: "-"}, value=0)
+
+            with ui.row().classes("w-full justify-end"):
+                ui.button("关闭", on_click=self.close).props("outline")
+                ui.button(text="确定", on_click=self.修改配置F)
+
+    def 修改配置F(self):
+        global \
+            第二位_索引G, \
+            第三位_索引G, \
+            第四位_风格G, \
+            第四位_索引G, \
+            后缀_风格G, \
+            连接符_索引G, \
+            第四位_默认GL, \
+            后缀_默认GL, \
+            连接符_默认GS
+
+        第二位_索引G = self.toggle1.value  # type: ignore
+        第三位_索引G = self.toggle2.value  # type: ignore
+        第四位_风格G = self.toggle3.value  # type: ignore
+        第四位_索引G = self.toggle4.value  # type: ignore
+        后缀_风格G = self.toggle5.value  # type: ignore
+        连接符_索引G = self.toggle6.value  # type: ignore
+
+        第四位_默认GL = 常量_第四位[第四位_风格G]
+        后缀_默认GL = 常量_后缀[后缀_风格G]  # type: ignore
+        连接符_默认GS = 常量_连接符[连接符_索引G]
+
+        配置O.写入配置F(第二位_索引G, 第三位_索引G, 第四位_风格G, 第四位_索引G, 后缀_风格G, 连接符_索引G)  # type: ignore
+
 
 ####################################事件方法#############################################
 async def 读取文件F() -> None:
@@ -107,22 +183,27 @@ async def 读取文件F() -> None:
     await 获取路径F()
 
     if 是否_sqlite(项目路径G):
-        项目O = 项目C(项目路径G)
-        标注GL = 项目O.读取F()
+        项目O = 项目C()
+        标注GL = 项目O.读取F(项目路径G)
         项目O.关闭连接F()
     else:
         ui.notify("你选中的文件不是db文件，请重新选择！")
 
 
 async def 保存文件F() -> None:
-    global 标注GL
-
     await 获取路径F()
 
+    if 项目路径G.is_dir():
+        项目O = 项目C()
+        项目O.保存F(项目路径G, 标注GL)
+        项目O.关闭连接F()
+    else:
+        ui.notify("你选中的文件不是目录，请重新选择！")
 
 async def 获取路径F() -> None:
     global 项目路径G
-    项目路径G = await local_file_picker("~", multiple=True)
+    temp = await local_file_picker("~", multiple=True)
+    项目路径G = temp[0]
     print("读取到的文件或目录路径：", 项目路径G)
 
 

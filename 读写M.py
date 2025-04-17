@@ -63,7 +63,7 @@ class 配置C:
             values = (第二位_索引, 第三位_索引, 第四位_风格, 第四位_索引, 后缀_风格, 连接符_索引)
             self.conn.execute(query, values)
             self.conn.commit()
-            print("第一行数据更新成功。")
+            print("配置已更新为：", values)
         except sqlite3.Error as e:
             print(f"发生错误: {e}")
             self.conn.rollback()
@@ -71,16 +71,13 @@ class 配置C:
 
 ####################################项目：读取、保存#############################################
 class 项目C:
-    def __init__(self, 项目路径V):
-        temp = 项目路径V / Path(常量_项目名)
-        self.conn = sqlite3.connect(temp)
-        self.cu = self.conn.cursor()
-        try:
-            self.__初始化()
-        except sqlite3.Error as e:
-            print(f"初始化数据库时发生错误: {e}")
+    def __init__(self):
+        pass
 
-    def __初始化(self):
+    def __初始化(self, 项目路径V):
+        self.conn = sqlite3.connect(项目路径V)
+        self.cu = self.conn.cursor()
+
         try:
             create_table_query = """
             CREATE TABLE IF NOT EXISTS table1 (
@@ -100,7 +97,10 @@ class 项目C:
             print(f"创建表时发生错误: {e}")
             self.conn.rollback()
 
-    def 保存F(self, data):
+    def 保存F(self, 项目路径V, data):
+        temp = 项目路径V / Path(常量_项目名)
+        self.__初始化(temp)
+
         # 例：data = [[4,"1","1","1","a","支杆","一"], [4,"1","1","1","a","等级","一"]]
         try:
             # 清空旧数据
@@ -116,8 +116,10 @@ class 项目C:
             print(f"保存数据时发生错误: {e}")
             self.conn.rollback()
 
-    def 读取F(self) -> list:
+    def 读取F(self, 项目路径V) -> list:
         result = []
+        self.__初始化(项目路径V)
+
         try:
             # 不包含 id 列的查询
             select_query = "SELECT 等级, 第一位, 第二位, 第三位, 第四位, 零件名, 后缀 FROM table1 ORDER BY id"
