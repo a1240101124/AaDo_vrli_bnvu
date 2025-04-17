@@ -15,6 +15,7 @@ from enum import Enum
 from pathlib import Path
 
 from nicegui import native, ui
+
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -184,27 +185,47 @@ class 命名规则面板C(ui.dialog):
 class 标签C(ui.card):
     def __init__(self, 序号V: int, text: str = "  ") -> None:
         super().__init__()
+        self.tight()
 
-        with self, ui.row().classes("rounded-full space-x-2 p-2").style("width: fit-content"):
-            self.checkbox = ui.checkbox(value=False, on_change=lambda: self.更改当前标签F(序号V))
-            self.lable = ui.label(text).on("click", lambda: self.更改F())
-            ui.button(icon="add_circle").classes("p-1 rounded-full bg-transparent border-none")
-            ui.button(icon="cancel").classes("p-1 rounded-full bg-transparent border-none")
+        self.序号V = 序号V
 
-    def 更改当前标签F(self, 序号V):
+        with self, ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content"):
+            # 调整 checkbox 样式
+            self.checkbox = ui.checkbox(value=False, on_change=lambda: self.更改当前标签F()).classes(
+                "m-0 p-0 h-4 w-4 shrink-0"
+            )
+            self.lable = ui.label(text).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
+            # 调整按钮样式，缩小图标大小
+            ui.button(icon="add_circle", on_click=self.新建F).classes(
+                "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
+            ).style("min-width: 0 !important; min-height: 0 !important")
+            ui.button(icon="cancel", on_click=self.删除F).classes(
+                "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
+            ).style("min-width: 0 !important; min-height: 0 !important")
+
+    def 更改当前标签F(self):
         global 当前标签G
         if self.checkbox.value:
             self.前_标签V = 当前标签G
-            当前标签G = 序号V
+            当前标签G = self.序号V
         else:
             当前标签G = self.前_标签V
 
         print("当前标签序号为：", 当前标签G)
 
     async def 更改F(self):
+        global 当前标签G
+        当前标签G = self.序号V
         输入V = await 输入框C()
-        self.lable.set_text(输入V)
+        if 输入V:
+            self.lable.set_text(输入V)
 
+    async def 新建F(self):
+        global 当前标签G
+        输入V = await 输入框C()
+
+    def 删除F(self):
+        pass
 
 class 输入框C(ui.dialog):
     def __init__(self, *, value: bool = False) -> None:
@@ -213,10 +234,10 @@ class 输入框C(ui.dialog):
         with self, ui.card().classes("p-4"):
             with ui.row().classes("w-full items-center space-x-2"):
                 self.输入V = ui.input(placeholder="请输入零件名").props("square outlined dense").classes("flex-1")
-                ui.button(icon="check", on_click=lambda: self.submit(self.输入V.value)).classes(
-                    "p-2 rounded-full bg-blue-500 text-white"
-                )
+                ui.button(icon="check", on_click=self.更新F).classes("p-2 rounded-full bg-blue-500 text-white")
 
+    def 更新F(self):
+        self.submit(self.输入V.value)
 
 ####################################事件方法#############################################
 async def 读取文件F() -> None:
