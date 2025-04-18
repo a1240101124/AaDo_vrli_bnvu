@@ -15,7 +15,6 @@ from enum import Enum
 from pathlib import Path
 
 from nicegui import native, ui
-
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -106,17 +105,17 @@ async def _() -> None:
         ui.button(text="命名规则", on_click=lambda: 命名规则面板C())
 
     # ************侧边栏************
-    with ui.left_drawer(value=True).classes("bg-blue-grey-1").style("width: 150px!important;"):
-        ui.button(text="创建顶级命名")
-        ui.button(text="前")
-        ui.button(text="后")
-        ui.space()
-        ui.button(text="粘贴")
+    with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
+        with ui.column():
+            ui.button(text="创建顶级命名")
+            ui.button(text="前")
+            ui.button(text="后")
+            ui.space()
+            ui.button(text="粘贴")
 
     # ************主要内容************
-    with ui.element("div"):
-        with ui.card():
-            ui.label("你好")
+    with ui.card().style("background-color: #ff0000;"):
+        with ui.column().classes("w-full"):
             标签C(1, "你好")
 
 class 命名规则面板C(ui.dialog):
