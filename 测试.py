@@ -1,7 +1,12 @@
 from nicegui import ui
 
-with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
-    ui.label("1111")
+with ui.card():
+    ui.button("button A")
+    ui.label("label A")
+
+with ui.card():
+    ui.button("button B")
+    ui.label("label B")
 
 
 ui.run()

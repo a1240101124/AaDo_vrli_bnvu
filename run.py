@@ -13,16 +13,17 @@ r"""
 # 导入常用模块
 from enum import Enum
 from pathlib import Path
+from pprint import pprint
 
-from nicegui import native, ui
+from nicegui import ElementFilter, native, ui
+
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
     常量_一级_位置,
-    常量_三极_位置,
+    常量_三级_位置,
     常量_二级_位置,
     常量_后缀,
-    常量_后缀_最大,
     常量_四级_位置,
     常量_标题,
     常量_第一位,
@@ -60,11 +61,10 @@ class 等级E(Enum):
     三 = 3
     四 = 4
 
+等级G: 等级E = 等级E.一
+生成区域G: ui.column  # 用于标签生成，方便管理
 
 配置O = 配置C()
-
-# 例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
-标注GL: list[list] = []
 
 
 ####################################初始化#############################################
@@ -94,7 +94,7 @@ def 配置初始化F():
     连接符_默认GS = 常量_连接符[连接符_索引G]
 
 
-####################################界面#############################################
+####################################主界面#############################################
 @ui.page(path="/")
 async def _() -> None:
     # ************页眉************
@@ -107,16 +107,17 @@ async def _() -> None:
     # ************侧边栏************
     with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
         with ui.column():
-            ui.button(text="创建顶级命名")
+            ui.button(text="新建", on_click=lambda: 生成器O.添加标签F("12222"))
             ui.button(text="前")
             ui.button(text="后")
             ui.space()
             ui.button(text="粘贴")
 
     # ************主要内容************
-    with ui.card().style("background-color: #ff0000;"):
-        with ui.column().classes("w-full"):
-            标签C(1, "你好")
+    with ui.card().style("width: 82vw; height: 85vh;"):
+        global 生成区域G
+        生成区域G = ui.column(align_items="start").classes("w-full")
+
 
 class 命名规则面板C(ui.dialog):
     def __init__(
@@ -181,28 +182,50 @@ class 命名规则面板C(ui.dialog):
         配置O.写入配置F(第二位_索引G, 第三位_索引G, 第四位_风格G, 第四位_索引G, 后缀_风格G, 连接符_索引G)  # type: ignore
 
 
-class 标签C(ui.card):
-    def __init__(self, 序号V: int, text: str = "  ") -> None:
-        super().__init__()
-        self.tight()
+class 标签C(ui.element):
+    def __init__(self, 序号V: int, 等级V: 等级E, text: str = "XXX") -> None:
+        super().__init__(tag="div")
+        self.序号V = 序号V  # 用于存储自身的序号
+        self.等级V: 等级E = 等级E.一
+        self.第一位V: str = "1"
+        self.第二位V: str = "0"
+        self.第三位V: str = "0"
+        self.第四位V: str = ""
+        self.零件名V: str = text
+        self.后缀V: str = ""
+        self.重名次数V: int = 0
 
-        self.序号V = 序号V
+        self._等级配置V = {
+            等级E.一: {"颜色": 常量_颜色["一级"], "位置": 常量_一级_位置},
+            等级E.二: {"颜色": 常量_颜色["二级"], "位置": 常量_二级_位置},
+            等级E.三: {"颜色": 常量_颜色["三级"], "位置": 常量_三级_位置},
+            等级E.四: {"颜色": 常量_颜色["四级"], "位置": 常量_四级_位置},
+        }
+        self.配置V = self._等级配置V.get(等级V)
 
-        with self, ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content"):
-            # 调整 checkbox 样式
-            self.checkbox = ui.checkbox(value=False, on_change=lambda: self.更改当前标签F()).classes(
-                "m-0 p-0 h-4 w-4 shrink-0"
-            )
-            self.lable = ui.label(text).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
-            # 调整按钮样式，缩小图标大小
-            ui.button(icon="add_circle", on_click=self.新建F).classes(
-                "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
-            ).style("min-width: 0 !important; min-height: 0 !important")
-            ui.button(icon="cancel", on_click=self.删除F).classes(
-                "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
-            ).style("min-width: 0 !important; min-height: 0 !important")
+        if not self.配置V:
+            raise ValueError(f"不支持的等级: {等级V}")
 
-    def 更改当前标签F(self):
+        self.文本V = self.生成文本F()
+
+        pprint(f"当前标的签序号：【{self.序号V}】，等级：【{等级V}】,文本：【{self.文本V}】，它的配置：{self.配置V}")
+
+        with self, ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content;"):
+            ui.element("div").style(f"width: {self.配置V['位置']}px;")
+            with ui.card().tight().style(f"background-color: {self.配置V['颜色']}"):
+                with ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content;"):
+                    self.checkbox = ui.checkbox(value=False, on_change=lambda: self.选择标签F()).classes(
+                        "m-0 p-0 h-4 w-4 shrink-0"
+                    )
+                    self.lable = ui.label(self.文本V).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
+                    ui.button(icon="add_circle", on_click=self.新建F).classes(
+                        "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
+                    ).style("min-width: 0 !important; min-height: 0 !important")
+                    ui.button(icon="cancel", on_click=self.删除F).classes(
+                        "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
+                    ).style("min-width: 0 !important; min-height: 0 !important")
+
+    def 选择标签F(self):
         global 当前标签G
         if self.checkbox.value:
             self.前_标签V = 当前标签G
@@ -226,6 +249,22 @@ class 标签C(ui.card):
     def 删除F(self):
         pass
 
+    def 生成文本F(self) -> str:
+        result = (
+            self.第一位V
+            + 连接符_默认GS
+            + self.第二位V
+            + 连接符_默认GS
+            + self.第三位V
+            + 连接符_默认GS
+            + self.第四位V
+            + "、"
+            + self.零件名V
+            + self.后缀V
+        )
+        return result
+
+
 class 输入框C(ui.dialog):
     def __init__(self, *, value: bool = False) -> None:
         super().__init__(value=value)
@@ -238,8 +277,10 @@ class 输入框C(ui.dialog):
     def 更新F(self):
         self.submit(self.输入V.value)
 
+
 ####################################事件方法#############################################
 async def 读取文件F() -> None:
+    # TODO 标注GL是需要被保存的数据，来自生成器，需要重新写
     global 标注GL
 
     await 获取路径F()
@@ -262,6 +303,7 @@ async def 保存文件F() -> None:
     else:
         ui.notify("你选中的文件不是目录，请重新选择！")
 
+
 async def 获取路径F() -> None:
     global 项目路径G
     temp = await local_file_picker("~", multiple=True)
@@ -274,6 +316,66 @@ def 是否_sqlite(path: Path):
     return 扩展名V in [".sqlite", ".sqlite3", ".db"]
 
 
+####################################生成器#############################################
+class 标签生成器C:
+    def __init__(self):
+        self.标注VL: list[标签C] = []  # 容纳所有标签类
+        self._当前序号V = 0
+
+        self.第一位_长度V = len(常量_第一位)
+        self.第二位_长度V = len(常量_第二位)
+        self.第三位_长度V = len(常量_第三位)
+        self.第四位_长度V = len(第四位_默认GL)
+        self.后缀_长度V = len(后缀_默认GL)
+
+    def 删除标签F(self):
+        pass
+
+    def 修改标签等级F(self):
+        pass
+
+    def 添加标签F(self, 零件名V: str = "XXX") -> None:
+        """生成指定等级的标签组件"""
+        # 例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
+        global 当前标签G, 等级G, 标注G, 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
+        当前标签G = self._当前序号V
+
+        self.标签O = 标签C(序号V=self._当前序号V, 等级V=等级G, text=零件名V)
+        self.标签O.第一位V = 常量_第一位[第一位_索引G]
+        self.标签O.第二位V = 常量_第二位[第二位_索引G]
+        self.标签O.第三位V = 常量_第三位[第三位_索引G]
+        self.标签O.第四位V = 第四位_默认GL[第四位_索引G]
+
+        self.标注VL.append(self.标签O)
+        self.标签O.move(生成区域G)
+
+        # ************索引递增条件************
+        # TODO 加弹窗提示超出范围了，方便理解
+        self._当前序号V += 1
+        if 等级E.一 == 等级G and 第一位_索引G <= self.第一位_长度V:
+            第一位_索引G += 1
+        elif 等级E.二 == 等级G and 第二位_索引G <= self.第二位_长度V:
+            第二位_索引G += 1
+        elif 等级E.三 == 等级G and 第一位_索引G <= self.第三位_长度V:
+            第三位_索引G += 1
+        elif 等级E.四 == 等级G and 第一位_索引G <= self.第四位_长度V:
+            第四位_索引G += 1
+        self.零件名_重名_后缀F(零件名V)
+
+    def 零件名_重名_后缀F(self, 零件名V):
+        for item in self.标注VL:
+            if item.零件名V == 零件名V and self.后缀_长度V:
+                self.标签O.重名次数V += 1
+        self.标签O.后缀V = 后缀_默认GL[self.标签O.重名次数V]
+
+    @property
+    def 当前序号(self) -> int:
+        """获取当前自动生成的序号"""
+        return self._当前序号V
+
+
+# 初始化生成器
+生成器O = 标签生成器C()
 ####################################入口#############################################
 if __name__ in {"__main__", "__mp_main__"}:
     配置初始化F()
