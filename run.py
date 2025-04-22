@@ -16,6 +16,7 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import ElementFilter, native, ui
+
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -51,7 +52,7 @@ from 配置M import (
 连接符_索引G: int = 0
 连接符_默认GS: str = ""
 
-当前标签G: int = 0
+当前标签G: int = 0  # 用于储存当前的标签序号，方便管理
 
 
 class 等级E(Enum):
@@ -59,6 +60,7 @@ class 等级E(Enum):
     二 = 2
     三 = 3
     四 = 4
+
 
 等级G: 等级E = 等级E.一
 生成区域G: ui.column  # 用于标签生成，方便管理
@@ -105,7 +107,7 @@ async def _() -> None:
     # ************侧边栏************
     with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
         with ui.column():
-            ui.button(text="新建", on_click=lambda: 生成器O.添加标签F("12222"))
+            ui.button(text="新建", on_click=添加标签F)
             ui.button(text="前")
             ui.button(text="后")
             ui.space()
@@ -228,7 +230,7 @@ class 标签C(ui.element):
                         "m-0 p-0 h-4 w-4 shrink-0"
                     )
                     self.lable = ui.label(self.文本V).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
-                    ui.button(icon="add_circle", on_click=self.新建F).classes(
+                    ui.button(icon="add_circle", on_click=添加标签F).classes(
                         "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
                     ).style("min-width: 0 !important; min-height: 0 !important")
                     ui.button(icon="cancel", on_click=self.删除F).classes(
@@ -251,10 +253,6 @@ class 标签C(ui.element):
         输入V = await 输入框C()
         if 输入V:
             self.lable.set_text(输入V)
-
-    async def 新建F(self):
-        global 当前标签G
-        输入V = await 输入框C()
 
     def 删除F(self):
         pass
@@ -325,6 +323,11 @@ def 是否_sqlite(path: Path):
     扩展名V: str = path.suffix.lower()
     return 扩展名V in [".sqlite", ".sqlite3", ".db"]
 
+async def 添加标签F():
+    global 当前标签G
+    text = await 输入框C()
+    当前标签O = 生成器O.添加标签F(text)
+    当前标签G = 当前标签O.序号V
 
 ####################################生成器#############################################
 class 标签生成器C:
@@ -343,7 +346,7 @@ class 标签生成器C:
     def 修改标签等级F(self):
         pass
 
-    def 添加标签F(self, 零件名V: str = "XXX") -> None:
+    def 添加标签F(self, 零件名V: str = "XXX") -> 标签C:
         """生成指定等级的标签组件"""
 
         global 当前标签G, 等级G, 标注GL
@@ -368,6 +371,8 @@ class 标签生成器C:
         pprint(f"标注G:{标注GL}")
         self.索引递增F()
 
+        return self.标签O
+
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
         for item in self.标注VL:
@@ -377,42 +382,61 @@ class 标签生成器C:
         if result < self.后缀_长度V:
             后缀V = 后缀_默认GL[result]
         else:
-            ui.notify("重复的零件名太多了，已经超出上限！")
+            ui.notify("""
+                    重复的零件名太多了，已经超出上限！
+                    源自：标签生成器C.零件名_重名_后缀F
+                    """)
         return 后缀V, result
 
     def 编号F(self):
+        print("索引值", 第一位_索引G)
         if 第一位_索引G < self.第一位_长度V:
             第一位V = 常量_第一位[第一位_索引G]
-        else:
-            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
         if 第二位_索引G < self.第二位_长度V:
             第二位V = 常量_第二位[第二位_索引G]
-        else:
-            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
         if 第三位_索引G < self.第三位_长度V:
             第三位V = 常量_第三位[第三位_索引G]
-        else:
-            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
         if 第四位_索引G < self.第四位_长度V:
             第四位V = 第四位_默认GL[第四位_索引G]
-        else:
-            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
 
         return 第一位V, 第二位V, 第三位V, 第四位V
 
     def 索引递增F(self):
         global 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
         # ************索引递增条件************
-        # TODO 加弹窗提示超出范围了，方便理解
         self._当前序号V += 1
-        if 等级E.一 == 等级G and 第一位_索引G < self.第一位_长度V:
-            第一位_索引G += 1
-        elif 等级E.二 == 等级G and 第二位_索引G < self.第二位_长度V:
-            第二位_索引G += 1
-        elif 等级E.三 == 等级G and 第三位_索引G < self.第三位_长度V:
-            第三位_索引G += 1
-        elif 等级E.四 == 等级G and 第四位_索引G < self.第四位_长度V:
-            第四位_索引G += 1
+        if 等级E.一 == 等级G:
+            if 第一位_索引G < self.第一位_长度V - 1:
+                第一位_索引G += 1
+            else:
+                ui.notify("""
+                    第一位已到极限！请妥善安排命名结构！
+                    源自：标签生成器C.索引递增F
+                    """)
+        elif 等级E.二 == 等级G:
+            if 第二位_索引G < self.第二位_长度V - 1:
+                第二位_索引G += 1
+            else:
+                ui.notify("""
+                    第二位已到极限！请妥善安排命名结构！
+                    源自：标签生成器C.索引递增F
+                    """)
+        elif 等级E.三 == 等级G:
+            if 第三位_索引G < self.第三位_长度V - 1:
+                第三位_索引G += 1
+            else:
+                ui.notify("""
+                    第三位已到极限！请妥善安排命名结构！
+                    源自：标签生成器C.索引递增F
+                    """)
+        elif 等级E.四 == 等级G:
+            if 第四位_索引G < self.第四位_长度V - 1:
+                第四位_索引G += 1
+            else:
+                ui.notify("""
+                    第四位已到极限！请妥善安排命名结构！
+                    源自：标签生成器C.索引递增F
+                    """)
 
     @property
     def 当前序号(self) -> int:
