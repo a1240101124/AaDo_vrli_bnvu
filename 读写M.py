@@ -35,7 +35,7 @@ class 配置C:
             first_row = self.cu.fetchone()
 
             if first_row:
-                print("第一行除 id 列外的数据：", first_row)
+                print("配置内容：", first_row)
             else:
                 print("表中没有数据。")
             return first_row

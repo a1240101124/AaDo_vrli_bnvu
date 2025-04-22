@@ -16,7 +16,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import ElementFilter, native, ui
-
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -63,8 +62,7 @@ class 等级E(Enum):
 
 等级G: 等级E = 等级E.一
 生成区域G: ui.column  # 用于标签生成，方便管理
-
-配置O = 配置C()
+标注GL: list[list] = []  # 用于储存所有标注信息，例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
 
 
 ####################################初始化#############################################
@@ -183,17 +181,28 @@ class 命名规则面板C(ui.dialog):
 
 
 class 标签C(ui.element):
-    def __init__(self, 序号V: int, 等级V: 等级E, text: str = "XXX") -> None:
+    def __init__(
+        self,
+        序号V: int,
+        等级V: 等级E,
+        text: str = "XXX",
+        第一位V: str = "1",
+        第二位V: str = "0",
+        第三位V: str = "0",
+        第四位V: str = "",
+        后缀V: str = "",
+        重名次数V: int = 0,
+    ) -> None:
         super().__init__(tag="div")
         self.序号V = 序号V  # 用于存储自身的序号
-        self.等级V: 等级E = 等级E.一
-        self.第一位V: str = "1"
-        self.第二位V: str = "0"
-        self.第三位V: str = "0"
-        self.第四位V: str = ""
+        self.等级V: 等级E = 等级V
+        self.第一位V: str = 第一位V
+        self.第二位V: str = 第二位V
+        self.第三位V: str = 第三位V
+        self.第四位V: str = 第四位V
         self.零件名V: str = text
-        self.后缀V: str = ""
-        self.重名次数V: int = 0
+        self.后缀V: str = 后缀V
+        self.重名次数V: int = 重名次数V
 
         self._等级配置V = {
             等级E.一: {"颜色": 常量_颜色["一级"], "位置": 常量_一级_位置},
@@ -201,14 +210,15 @@ class 标签C(ui.element):
             等级E.三: {"颜色": 常量_颜色["三级"], "位置": 常量_三级_位置},
             等级E.四: {"颜色": 常量_颜色["四级"], "位置": 常量_四级_位置},
         }
-        self.配置V = self._等级配置V.get(等级V)
-
+        self.配置V = self._等级配置V.get(self.等级V)
         if not self.配置V:
-            raise ValueError(f"不支持的等级: {等级V}")
+            raise ValueError(f"不支持的等级: {self.等级V}")
 
         self.文本V = self.生成文本F()
 
-        pprint(f"当前标的签序号：【{self.序号V}】，等级：【{等级V}】,文本：【{self.文本V}】，它的配置：{self.配置V}")
+        pprint(
+            f"当前标的签序号：【{self.序号V}】，等级：【{self.等级V}】,文本：【{self.文本V}】，它的配置：{self.配置V}"
+        )
 
         with self, ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content;"):
             ui.element("div").style(f"width: {self.配置V['位置']}px;")
@@ -262,6 +272,7 @@ class 标签C(ui.element):
             + self.零件名V
             + self.后缀V
         )
+        print(f"生成文本：{result}")
         return result
 
 
@@ -280,7 +291,6 @@ class 输入框C(ui.dialog):
 
 ####################################事件方法#############################################
 async def 读取文件F() -> None:
-    # TODO 标注GL是需要被保存的数据，来自生成器，需要重新写
     global 标注GL
 
     await 获取路径F()
@@ -319,9 +329,8 @@ def 是否_sqlite(path: Path):
 ####################################生成器#############################################
 class 标签生成器C:
     def __init__(self):
-        self.标注VL: list[标签C] = []  # 容纳所有标签类
+        self.标注VL: list[标签C] = []  # 储存所有标签类
         self._当前序号V = 0
-
         self.第一位_长度V = len(常量_第一位)
         self.第二位_长度V = len(常量_第二位)
         self.第三位_长度V = len(常量_第三位)
@@ -336,37 +345,74 @@ class 标签生成器C:
 
     def 添加标签F(self, 零件名V: str = "XXX") -> None:
         """生成指定等级的标签组件"""
-        # 例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
-        global 当前标签G, 等级G, 标注G, 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
+
+        global 当前标签G, 等级G, 标注GL
         当前标签G = self._当前序号V
 
-        self.标签O = 标签C(序号V=self._当前序号V, 等级V=等级G, text=零件名V)
-        self.标签O.第一位V = 常量_第一位[第一位_索引G]
-        self.标签O.第二位V = 常量_第二位[第二位_索引G]
-        self.标签O.第三位V = 常量_第三位[第三位_索引G]
-        self.标签O.第四位V = 第四位_默认GL[第四位_索引G]
-
-        self.标注VL.append(self.标签O)
+        第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
+        后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
+        self.标签O = 标签C(
+            序号V=self._当前序号V,
+            等级V=等级G,
+            text=零件名V,
+            第一位V=第一位V,
+            第二位V=第二位V,
+            第三位V=第三位V,
+            第四位V=第四位V,
+            后缀V=后缀V,
+            重名次数V=重名次数V,
+        )
         self.标签O.move(生成区域G)
+        self.标注VL.append(self.标签O)
+        标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
+        pprint(f"标注G:{标注GL}")
+        self.索引递增F()
 
+    def 零件名_重名_后缀F(self, 零件名V):
+        result: int = 0
+        for item in self.标注VL:
+            if item.零件名V == 零件名V:
+                result += 1
+
+        if result < self.后缀_长度V:
+            后缀V = 后缀_默认GL[result]
+        else:
+            ui.notify("重复的零件名太多了，已经超出上限！")
+        return 后缀V, result
+
+    def 编号F(self):
+        if 第一位_索引G < self.第一位_长度V:
+            第一位V = 常量_第一位[第一位_索引G]
+        else:
+            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
+        if 第二位_索引G < self.第二位_长度V:
+            第二位V = 常量_第二位[第二位_索引G]
+        else:
+            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
+        if 第三位_索引G < self.第三位_长度V:
+            第三位V = 常量_第三位[第三位_索引G]
+        else:
+            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
+        if 第四位_索引G < self.第四位_长度V:
+            第四位V = 第四位_默认GL[第四位_索引G]
+        else:
+            ui.notify("第一位已经超出上限！请妥善安排命名结构！")
+
+        return 第一位V, 第二位V, 第三位V, 第四位V
+
+    def 索引递增F(self):
+        global 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
         # ************索引递增条件************
         # TODO 加弹窗提示超出范围了，方便理解
         self._当前序号V += 1
-        if 等级E.一 == 等级G and 第一位_索引G <= self.第一位_长度V:
+        if 等级E.一 == 等级G and 第一位_索引G < self.第一位_长度V:
             第一位_索引G += 1
-        elif 等级E.二 == 等级G and 第二位_索引G <= self.第二位_长度V:
+        elif 等级E.二 == 等级G and 第二位_索引G < self.第二位_长度V:
             第二位_索引G += 1
-        elif 等级E.三 == 等级G and 第一位_索引G <= self.第三位_长度V:
+        elif 等级E.三 == 等级G and 第三位_索引G < self.第三位_长度V:
             第三位_索引G += 1
-        elif 等级E.四 == 等级G and 第一位_索引G <= self.第四位_长度V:
+        elif 等级E.四 == 等级G and 第四位_索引G < self.第四位_长度V:
             第四位_索引G += 1
-        self.零件名_重名_后缀F(零件名V)
-
-    def 零件名_重名_后缀F(self, 零件名V):
-        for item in self.标注VL:
-            if item.零件名V == 零件名V and self.后缀_长度V:
-                self.标签O.重名次数V += 1
-        self.标签O.后缀V = 后缀_默认GL[self.标签O.重名次数V]
 
     @property
     def 当前序号(self) -> int:
@@ -374,11 +420,11 @@ class 标签生成器C:
         return self._当前序号V
 
 
-# 初始化生成器
-生成器O = 标签生成器C()
 ####################################入口#############################################
 if __name__ in {"__main__", "__mp_main__"}:
+    配置O = 配置C()
     配置初始化F()
+    生成器O = 标签生成器C()
     ui.run(
         title=常量_标题,
         favicon=图标路径G,
