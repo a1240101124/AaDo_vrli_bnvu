@@ -16,7 +16,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import ElementFilter, native, ui
-
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -52,7 +51,7 @@ from 配置M import (
 连接符_索引G: int = 0
 连接符_默认GS: str = ""
 
-当前标签G: int = 0  # 用于储存当前的标签序号，方便管理
+当前标签G: int = 0  # 用于表面当前被选中的标签
 
 
 class 等级E(Enum):
@@ -238,24 +237,16 @@ class 标签C(ui.element):
                     ).style("min-width: 0 !important; min-height: 0 !important")
 
     def 选择标签F(self):
-        global 当前标签G
         if self.checkbox.value:
-            self.前_标签V = 当前标签G
-            当前标签G = self.序号V
-        else:
-            当前标签G = self.前_标签V
-
-        print("当前标签序号为：", 当前标签G)
+            生成器O.选择标签F(self.序号V)
 
     async def 更改F(self):
-        global 当前标签G
-        当前标签G = self.序号V
-        输入V = await 输入框C()
-        if 输入V:
-            self.lable.set_text(输入V)
+        if self.checkbox.value:
+            生成器O.修改零件名F()
 
     def 删除F(self):
-        pass
+        if self.checkbox.value:
+            生成器O.删除标签F()
 
     def 生成文本F(self) -> str:
         result = (
@@ -333,15 +324,36 @@ async def 添加标签F():
 class 标签生成器C:
     def __init__(self):
         self.标注VL: list[标签C] = []  # 储存所有标签类
-        self._当前序号V = 0
+        self._标签索引V = 0  # 用于存储 标注VL 列表的最后一个索引值
         self.第一位_长度V = len(常量_第一位)
         self.第二位_长度V = len(常量_第二位)
         self.第三位_长度V = len(常量_第三位)
         self.第四位_长度V = len(第四位_默认GL)
         self.后缀_长度V = len(后缀_默认GL)
+        self.前_标签序号V: int = 0  # 用于表明上一个被选中的标签
+
+    def 选择标签F(self, 序号V):
+        global 当前标签G
+
+        self.前_标签序号V = 当前标签G
+        self.标注VL[self.前_标签序号V].checkbox.value = False
+
+        当前标签G = 序号V
+        self.标注VL[当前标签G].checkbox.value = True
+
+        print("当前标签序号为：", 当前标签G)
 
     def 删除标签F(self):
-        pass
+        生成区域G.remove(当前标签G)
+        self.标注VL.pop(当前标签G)
+
+        count: int = len(self.标注VL)
+        if count > 0:
+            i: int = 当前标签G
+            while i < count:
+                self.标注VL[i].序号V = i
+
+                pass
 
     def 修改标签等级F(self):
         pass
@@ -350,12 +362,17 @@ class 标签生成器C:
         """生成指定等级的标签组件"""
 
         global 当前标签G, 等级G, 标注GL
-        当前标签G = self._当前序号V
+
+        self.前_标签序号V = 当前标签G
+        if self.前_标签序号V > 0:
+            self.标注VL[self.前_标签序号V].checkbox.value = False
+
+        当前标签G = self._标签索引V
 
         第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
         后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
         self.标签O = 标签C(
-            序号V=self._当前序号V,
+            序号V=self._标签索引V,
             等级V=等级G,
             text=零件名V,
             第一位V=第一位V,
@@ -366,18 +383,33 @@ class 标签生成器C:
             重名次数V=重名次数V,
         )
         self.标签O.move(生成区域G)
+        self.标签O.checkbox.value = True
         self.标注VL.append(self.标签O)
         标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
         pprint(f"标注G:{标注GL}")
+
         self.索引递增F()
 
         return self.标签O
 
+    async def 修改零件名F(self):
+        输入V = await 输入框C()
+        if 输入V:
+            self.标注VL[当前标签G].零件名V = 输入V
+            后缀V, 重名次数V = self.零件名_重名_后缀F(输入V)
+            self.标注VL[当前标签G].后缀V = 后缀V
+            self.标注VL[当前标签G].重名次数V = 重名次数V
+            文本V = self.标注VL[当前标签G].生成文本F()
+            self.标注VL[当前标签G].lable.set_text(文本V)
+
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
-        for item in self.标注VL:
-            if item.零件名V == 零件名V:
-                result += 1
+        if 当前标签G > 0:
+            i: int = 0
+            while i < 当前标签G:
+                if self.标注VL[i].零件名V == 零件名V:
+                    result += 1
+                i += 1
 
         if result < self.后缀_长度V:
             后缀V = 后缀_默认GL[result]
@@ -404,7 +436,7 @@ class 标签生成器C:
     def 索引递增F(self):
         global 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
         # ************索引递增条件************
-        self._当前序号V += 1
+        self._标签索引V += 1
         if 等级E.一 == 等级G:
             if 第一位_索引G < self.第一位_长度V - 1:
                 第一位_索引G += 1
@@ -441,7 +473,7 @@ class 标签生成器C:
     @property
     def 当前序号(self) -> int:
         """获取当前自动生成的序号"""
-        return self._当前序号V
+        return self._标签索引V
 
 
 ####################################入口#############################################
