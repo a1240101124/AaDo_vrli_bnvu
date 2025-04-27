@@ -2,7 +2,7 @@ r"""
 创建者: 阿斗是只猫
 创建日期: 2025-04-09
 最后编辑人: 阿斗是只猫
-最后编辑时间: 2025-04-13
+最后编辑时间: 2025-04-27
 说明:
 
     如有问题或建议，请联系微信公众号：【阿斗的小窝】
@@ -11,11 +11,12 @@ r"""
 """
 
 # 导入常用模块
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from pprint import pprint
 
-from nicegui import ElementFilter, native, ui
+from nicegui import native, ui
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -38,21 +39,6 @@ from 配置M import (
 图标路径G = 常量_路径 / Path("static/app_icon.ico")
 项目路径G = 常量_路径.parent
 
-第一位_索引G: int = 0  # 默认从索引0开始，即第一位的初始值为：1
-第二位_索引G: int = 1  # 第二位的初始值默认为：0
-第三位_索引G: int = 1  # 第三位的初始值默认为：0
-第四位_风格G: int = 1  # 第四位默认为字母
-第四位_索引G: int = 0  # 第四位的初始值默认为：""
-第四位_默认GL: list = []
-
-后缀_风格G = 0  # 后缀默认为数字
-后缀_默认GL: list = []
-
-连接符_索引G: int = 0
-连接符_默认GS: str = ""
-
-当前标签G: int = 0  # 用于表面当前被选中的标签
-
 
 class 等级E(Enum):
     一 = 1
@@ -62,35 +48,66 @@ class 等级E(Enum):
 
 
 等级G: 等级E = 等级E.一
+当前标签G: int = 0  # 用于表面当前被选中的标签
 生成区域G: ui.column  # 用于标签生成，方便管理
 标注GL: list[list] = []  # 用于储存所有标注信息，例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
 
+第四位_默认GL: list = []
+后缀_默认GL: list = []
+连接符_默认GS = ""
 
-####################################初始化#############################################
-def 配置初始化F():
-    global \
-        第二位_索引G, \
-        第三位_索引G, \
-        第四位_风格G, \
-        第四位_索引G, \
-        后缀_风格G, \
-        连接符_索引G, \
-        第四位_默认GL, \
-        后缀_默认GL, \
-        连接符_默认GS
 
-    配置VL: tuple = 配置O.读取配置F()
+@dataclass
+class 命名C:
+    第一位_索引V: int = 0  # 默认从索引0开始，即第一位的初始值为：1
+    第二位_索引V: int = 1  # 第二位的初始值默认为：0
+    第三位_索引V: int = 1  # 第三位的初始值默认为：0
+    第四位_风格V: int = 1  # 第四位默认为字母
+    第四位_索引V: int = 0  # 第四位的初始值默认为：""
+    后缀_风格V: int = 0  # 后缀默认为数字
+    连接符_索引V: int = 0
 
-    第二位_索引G = 配置VL[0]
-    第三位_索引G = 配置VL[1]
-    第四位_风格G = 配置VL[2]
-    第四位_索引G = 配置VL[3]
-    后缀_风格G = 配置VL[4]
-    连接符_索引G = 配置VL[5]
+    第四位_默认VL: list = field(default_factory=list)
+    后缀_默认VL: list = field(default_factory=list)
+    连接符_默认VS: str = ""
 
-    第四位_默认GL = 常量_第四位[第四位_风格G]
-    后缀_默认GL = 常量_后缀[后缀_风格G]
-    连接符_默认GS = 常量_连接符[连接符_索引G]
+    def 初始化F(self):
+        global 第四位_默认GL, 后缀_默认GL, 连接符_默认GS
+        配置VL: tuple = 配置O.读取配置F()
+
+        self.第二位_索引V = 配置VL[0]
+        self.第三位_索引V = 配置VL[1]
+        self.第四位_风格V = 配置VL[2]
+        self.第四位_索引V = 配置VL[3]
+        self.后缀_风格V = 配置VL[4]
+        self.连接符_索引V = 配置VL[5]
+
+        第四位_默认GL = 常量_第四位[self.第四位_风格V]
+        后缀_默认GL = 常量_后缀[self.后缀_风格V]
+        连接符_默认GS = 常量_连接符[self.连接符_索引V]
+
+    def 更新配置F(self, value_1, value_2, value_3, value_4, value_5, value_6):
+        global 第四位_默认GL, 后缀_默认GL, 连接符_默认GS
+
+        self.第二位_索引V = value_1
+        self.第三位_索引V = value_2
+        self.第四位_风格V = value_3
+        self.第四位_索引V = value_4
+        self.后缀_风格V = value_5
+        self.连接符_索引V = value_6
+
+        第四位_默认GL = 常量_第四位[self.第四位_风格V]
+        后缀_默认GL = 常量_后缀[self.后缀_风格V]
+        连接符_默认GS = 常量_连接符[self.连接符_索引V]
+
+        配置O.写入配置F(
+            self.第二位_索引V,
+            self.第三位_索引V,
+            self.第四位_风格V,
+            self.第四位_索引V,
+            self.后缀_风格V,
+            self.连接符_索引V,
+        )
 
 
 ####################################主界面#############################################
@@ -156,29 +173,14 @@ class 命名规则面板C(ui.dialog):
                 ui.button(text="确定", on_click=self.修改配置F)
 
     def 修改配置F(self):
-        global \
-            第二位_索引G, \
-            第三位_索引G, \
-            第四位_风格G, \
-            第四位_索引G, \
-            后缀_风格G, \
-            连接符_索引G, \
-            第四位_默认GL, \
-            后缀_默认GL, \
-            连接符_默认GS
-
-        第二位_索引G = self.toggle1.value  # type: ignore
-        第三位_索引G = self.toggle2.value  # type: ignore
-        第四位_风格G = self.toggle3.value  # type: ignore
-        第四位_索引G = self.toggle4.value  # type: ignore
-        后缀_风格G = self.toggle5.value  # type: ignore
-        连接符_索引G = self.toggle6.value  # type: ignore
-
-        第四位_默认GL = 常量_第四位[第四位_风格G]
-        后缀_默认GL = 常量_后缀[后缀_风格G]  # type: ignore
-        连接符_默认GS = 常量_连接符[连接符_索引G]
-
-        配置O.写入配置F(第二位_索引G, 第三位_索引G, 第四位_风格G, 第四位_索引G, 后缀_风格G, 连接符_索引G)  # type: ignore
+        命名O.更新配置F(
+            self.toggle1.value,
+            self.toggle2.value,
+            self.toggle3.value,
+            self.toggle4.value,
+            self.toggle5.value,
+            self.toggle6.value,
+        )
 
 
 class 标签C(ui.element):
@@ -314,11 +316,13 @@ def 是否_sqlite(path: Path):
     扩展名V: str = path.suffix.lower()
     return 扩展名V in [".sqlite", ".sqlite3", ".db"]
 
+
 async def 添加标签F():
     global 当前标签G
     text = await 输入框C()
     当前标签O = 生成器O.添加标签F(text)
     当前标签G = 当前标签O.序号V
+
 
 ####################################生成器#############################################
 class 标签生成器C:
@@ -336,14 +340,16 @@ class 标签生成器C:
         global 当前标签G
 
         self.前_标签序号V = 当前标签G
-        self.标注VL[self.前_标签序号V].checkbox.value = False
-
         当前标签G = 序号V
-        self.标注VL[当前标签G].checkbox.value = True
+
+        if 当前标签G > 0:
+            self.标注VL[self.前_标签序号V].checkbox.value = False
 
         print("当前标签序号为：", 当前标签G)
 
     def 删除标签F(self):
+        global 当前标签G
+
         生成区域G.remove(当前标签G)
         self.标注VL.pop(当前标签G)
 
@@ -352,8 +358,13 @@ class 标签生成器C:
             i: int = 当前标签G
             while i < count:
                 self.标注VL[i].序号V = i
+                i += 1
 
-                pass
+            self.标注VL[当前标签G].checkbox.value = True
+            self.前_标签序号V = 当前标签G
+        else:
+            self.前_标签序号V = 0
+            当前标签G = 0
 
     def 修改标签等级F(self):
         pass
@@ -361,13 +372,7 @@ class 标签生成器C:
     def 添加标签F(self, 零件名V: str = "XXX") -> 标签C:
         """生成指定等级的标签组件"""
 
-        global 当前标签G, 等级G, 标注GL
-
-        self.前_标签序号V = 当前标签G
-        if self.前_标签序号V > 0:
-            self.标注VL[self.前_标签序号V].checkbox.value = False
-
-        当前标签G = self._标签索引V
+        global 等级G, 标注GL
 
         第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
         后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
@@ -383,8 +388,8 @@ class 标签生成器C:
             重名次数V=重名次数V,
         )
         self.标签O.move(生成区域G)
-        self.标签O.checkbox.value = True
         self.标注VL.append(self.标签O)
+        self.标注VL[self._标签索引V].checkbox.value = True
         标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
         pprint(f"标注G:{标注GL}")
 
@@ -404,9 +409,9 @@ class 标签生成器C:
 
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
-        if 当前标签G > 0:
+        if self._标签索引V > 0:
             i: int = 0
-            while i < 当前标签G:
+            while i < self._标签索引V:
                 if self.标注VL[i].零件名V == 零件名V:
                     result += 1
                 i += 1
@@ -421,49 +426,48 @@ class 标签生成器C:
         return 后缀V, result
 
     def 编号F(self):
-        print("索引值", 第一位_索引G)
-        if 第一位_索引G < self.第一位_长度V:
-            第一位V = 常量_第一位[第一位_索引G]
-        if 第二位_索引G < self.第二位_长度V:
-            第二位V = 常量_第二位[第二位_索引G]
-        if 第三位_索引G < self.第三位_长度V:
-            第三位V = 常量_第三位[第三位_索引G]
-        if 第四位_索引G < self.第四位_长度V:
-            第四位V = 第四位_默认GL[第四位_索引G]
+        if 命名O.第一位_索引V < self.第一位_长度V:
+            第一位V = 常量_第一位[命名O.第一位_索引V]
+        if 命名O.第二位_索引V < self.第二位_长度V:
+            第二位V = 常量_第二位[命名O.第二位_索引V]
+        if 命名O.第三位_索引V < self.第三位_长度V:
+            第三位V = 常量_第三位[命名O.第三位_索引V]
+        if 命名O.第四位_索引V < self.第四位_长度V:
+            第四位V = 第四位_默认GL[命名O.第四位_索引V]
 
         return 第一位V, 第二位V, 第三位V, 第四位V
 
     def 索引递增F(self):
-        global 第一位_索引G, 第二位_索引G, 第三位_索引G, 第四位_索引G
         # ************索引递增条件************
+        # TODO 到达极限后应该自动更换等级
         self._标签索引V += 1
         if 等级E.一 == 等级G:
-            if 第一位_索引G < self.第一位_长度V - 1:
-                第一位_索引G += 1
+            if 命名O.第一位_索引V < self.第一位_长度V - 1:
+                命名O.第一位_索引V += 1
             else:
                 ui.notify("""
                     第一位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.二 == 等级G:
-            if 第二位_索引G < self.第二位_长度V - 1:
-                第二位_索引G += 1
+            if 命名O.第二位_索引V < self.第二位_长度V - 1:
+                命名O.第二位_索引V += 1
             else:
                 ui.notify("""
                     第二位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.三 == 等级G:
-            if 第三位_索引G < self.第三位_长度V - 1:
-                第三位_索引G += 1
+            if 命名O.第三位_索引V < self.第三位_长度V - 1:
+                命名O.第三位_索引V += 1
             else:
                 ui.notify("""
                     第三位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.四 == 等级G:
-            if 第四位_索引G < self.第四位_长度V - 1:
-                第四位_索引G += 1
+            if 命名O.第四位_索引V < self.第四位_长度V - 1:
+                命名O.第四位_索引V += 1
             else:
                 ui.notify("""
                     第四位已到极限！请妥善安排命名结构！
@@ -479,7 +483,8 @@ class 标签生成器C:
 ####################################入口#############################################
 if __name__ in {"__main__", "__mp_main__"}:
     配置O = 配置C()
-    配置初始化F()
+    命名O = 命名C()
+    命名O.初始化F()
     生成器O = 标签生成器C()
     ui.run(
         title=常量_标题,
