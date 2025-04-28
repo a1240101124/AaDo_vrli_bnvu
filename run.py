@@ -41,6 +41,7 @@ from 配置M import (
 
 
 class 等级E(Enum):
+    零 = 0  # TODO 添加顶级命名，将命名规则命名为5级
     一 = 1
     二 = 2
     三 = 3
