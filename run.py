@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from pprint import pprint
+from tkinter import NO
 
 from nicegui import native, ui
 from tools.local_file_picker import local_file_picker
@@ -41,7 +42,6 @@ from 配置M import (
 
 
 class 等级E(Enum):
-    零 = 0  # TODO 添加顶级命名，将命名规则命名为5级
     一 = 1
     二 = 2
     三 = 3
@@ -60,26 +60,22 @@ class 等级E(Enum):
 
 @dataclass
 class 命名C:
-    第一位_索引V: int = 0  # 默认从索引0开始，即第一位的初始值为：1
-    第二位_索引V: int = 1  # 第二位的初始值默认为：0
-    第三位_索引V: int = 1  # 第三位的初始值默认为：0
+    第一位_初始索引V: int = 0  # 默认从索引0开始，即第一位的初始值为：1
+    第二位_初始索引V: int = 1  # 第二位的初始值默认为：0
+    第三位_初始索引V: int = 1  # 第三位的初始值默认为：0
     第四位_风格V: int = 1  # 第四位默认为字母
-    第四位_索引V: int = 0  # 第四位的初始值默认为：""
+    第四位_初始索引V: int = 0  # 第四位的初始值默认为：""
     后缀_风格V: int = 0  # 后缀默认为数字
     连接符_索引V: int = 0
-
-    第四位_默认VL: list = field(default_factory=list)
-    后缀_默认VL: list = field(default_factory=list)
-    连接符_默认VS: str = ""
 
     def 初始化F(self):
         global 第四位_默认GL, 后缀_默认GL, 连接符_默认GS
         配置VL: tuple = 配置O.读取配置F()
 
-        self.第二位_索引V = 配置VL[0]
-        self.第三位_索引V = 配置VL[1]
+        self.第二位_初始索引V = 配置VL[0]
+        self.第三位_初始索引V = 配置VL[1]
         self.第四位_风格V = 配置VL[2]
-        self.第四位_索引V = 配置VL[3]
+        self.第四位_初始索引V = 配置VL[3]
         self.后缀_风格V = 配置VL[4]
         self.连接符_索引V = 配置VL[5]
 
@@ -90,10 +86,10 @@ class 命名C:
     def 更新配置F(self, value_1, value_2, value_3, value_4, value_5, value_6):
         global 第四位_默认GL, 后缀_默认GL, 连接符_默认GS
 
-        self.第二位_索引V = value_1
-        self.第三位_索引V = value_2
+        self.第二位_初始索引V = value_1
+        self.第三位_初始索引V = value_2
         self.第四位_风格V = value_3
-        self.第四位_索引V = value_4
+        self.第四位_初始索引V = value_4
         self.后缀_风格V = value_5
         self.连接符_索引V = value_6
 
@@ -102,10 +98,10 @@ class 命名C:
         连接符_默认GS = 常量_连接符[self.连接符_索引V]
 
         配置O.写入配置F(
-            self.第二位_索引V,
-            self.第三位_索引V,
+            self.第二位_初始索引V,
+            self.第三位_初始索引V,
             self.第四位_风格V,
-            self.第四位_索引V,
+            self.第四位_初始索引V,
             self.后缀_风格V,
             self.连接符_索引V,
         )
@@ -322,7 +318,8 @@ async def 添加标签F():
     global 当前标签G
     text = await 输入框C()
     当前标签O = 生成器O.添加标签F(text)
-    当前标签G = 当前标签O.序号V
+    if 当前标签O:
+        当前标签G = 当前标签O.序号V
 
 
 ####################################生成器#############################################
@@ -335,6 +332,12 @@ class 标签生成器C:
         self.第三位_长度V = len(常量_第三位)
         self.第四位_长度V = len(第四位_默认GL)
         self.后缀_长度V = len(后缀_默认GL)
+
+        self.第一位_索引V: int = 命名O.第一位_初始索引V
+        self.第二位_索引V: int = 命名O.第二位_初始索引V
+        self.第三位_索引V: int = 命名O.第三位_初始索引V
+        self.第四位_索引V: int = 命名O.第四位_初始索引V
+
         self.前_标签序号V: int = 0  # 用于表明上一个被选中的标签
 
     def 选择标签F(self, 序号V):
@@ -375,28 +378,30 @@ class 标签生成器C:
 
         global 等级G, 标注GL
 
-        第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
-        后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
-        self.标签O = 标签C(
-            序号V=self._标签索引V,
-            等级V=等级G,
-            text=零件名V,
-            第一位V=第一位V,
-            第二位V=第二位V,
-            第三位V=第三位V,
-            第四位V=第四位V,
-            后缀V=后缀V,
-            重名次数V=重名次数V,
-        )
-        self.标签O.move(生成区域G)
-        self.标注VL.append(self.标签O)
-        self.标注VL[self._标签索引V].checkbox.value = True
-        标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
-        pprint(f"标注G:{标注GL}")
+        if not self.是否_超出索引V:
+            第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
+            后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
+            self.标签O = 标签C(
+                序号V=self._标签索引V,
+                等级V=等级G,
+                text=零件名V,
+                第一位V=第一位V,
+                第二位V=第二位V,
+                第三位V=第三位V,
+                第四位V=第四位V,
+                后缀V=后缀V,
+                重名次数V=重名次数V,
+            )
+            self.标签O.move(生成区域G)
+            self.标注VL.append(self.标签O)
+            self.标注VL[self._标签索引V].checkbox.value = True
+            标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
+            pprint(f"标注G:{标注GL}")
 
-        self.索引递增F()
+            self.索引递增F()
+            return self.标签O
 
-        return self.标签O
+        return None
 
     async def 修改零件名F(self):
         输入V = await 输入框C()
@@ -427,49 +432,64 @@ class 标签生成器C:
         return 后缀V, result
 
     def 编号F(self):
-        if 命名O.第一位_索引V < self.第一位_长度V:
-            第一位V = 常量_第一位[命名O.第一位_索引V]
-        if 命名O.第二位_索引V < self.第二位_长度V:
-            第二位V = 常量_第二位[命名O.第二位_索引V]
-        if 命名O.第三位_索引V < self.第三位_长度V:
-            第三位V = 常量_第三位[命名O.第三位_索引V]
-        if 命名O.第四位_索引V < self.第四位_长度V:
-            第四位V = 第四位_默认GL[命名O.第四位_索引V]
+        # TODO 根据等级以及上一个标签的位值来确定某个位的数值
+        # 比如等级为2，上一个标签的第一位为“2”，那么此标签的第一位也应该为“2”
+        if self.第一位_索引V < self.第一位_长度V:
+            第一位V = 常量_第一位[self.第一位_索引V]
+        if self.第二位_索引V < self.第二位_长度V:
+            第二位V = 常量_第二位[self.第二位_索引V]
+        if self.第三位_索引V < self.第三位_长度V:
+            第三位V = 常量_第三位[self.第三位_索引V]
+        if self.第四位_索引V < self.第四位_长度V:
+            第四位V = 第四位_默认GL[self.第四位_索引V]
 
         return 第一位V, 第二位V, 第三位V, 第四位V
 
     def 索引递增F(self):
         # ************索引递增条件************
-        # TODO 到达极限后应该自动更换等级
+        global 等级G
+        self.是否_超出索引V: bool = False
         self._标签索引V += 1
         if 等级E.一 == 等级G:
-            if 命名O.第一位_索引V < self.第一位_长度V - 1:
-                命名O.第一位_索引V += 1
+            if self.第一位_索引V < self.第一位_长度V - 1:
+                self.第一位_索引V += 1
+                # 当第一位递增时，其他位索引重置为 0
+                self.第二位_索引V: int = 命名O.第二位_初始索引V
+                self.第三位_索引V: int = 命名O.第三位_初始索引V
+                self.第四位_索引V: int = 命名O.第四位_初始索引V
             else:
+                # 当第一位升到头后，切换等级
+                等级G = 等级E.二
                 ui.notify("""
                     第一位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.二 == 等级G:
-            if 命名O.第二位_索引V < self.第二位_长度V - 1:
-                命名O.第二位_索引V += 1
+            if 命名O.第二位_初始索引V < self.第二位_长度V - 1:
+                命名O.第二位_初始索引V += 1
+                self.第三位_索引V: int = 命名O.第三位_初始索引V
+                self.第四位_索引V: int = 命名O.第四位_初始索引V
             else:
+                等级G = 等级E.三
                 ui.notify("""
                     第二位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.三 == 等级G:
-            if 命名O.第三位_索引V < self.第三位_长度V - 1:
-                命名O.第三位_索引V += 1
+            if 命名O.第三位_初始索引V < self.第三位_长度V - 1:
+                命名O.第三位_初始索引V += 1
+                self.第四位_索引V: int = 命名O.第四位_初始索引V
             else:
+                等级G = 等级E.四
                 ui.notify("""
                     第三位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
                     """)
         elif 等级E.四 == 等级G:
-            if 命名O.第四位_索引V < self.第四位_长度V - 1:
-                命名O.第四位_索引V += 1
+            if 命名O.第四位_初始索引V < self.第四位_长度V - 1:
+                命名O.第四位_初始索引V += 1
             else:
+                self.是否_超出索引V = True
                 ui.notify("""
                     第四位已到极限！请妥善安排命名结构！
                     源自：标签生成器C.索引递增F
