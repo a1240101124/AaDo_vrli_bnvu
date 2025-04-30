@@ -121,10 +121,10 @@ async def _() -> None:
     with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
         with ui.column():
             ui.button(text="新建", on_click=添加标签F)
-            ui.button(text="前")
-            ui.button(text="后")
+            ui.button(text="前", on_click=提升等级F)
+            ui.button(text="后", on_click=降低等级F)
             ui.space()
-            ui.button(text="粘贴")
+            ui.button(text="粘贴", on_click=粘贴F)
 
     # ************主要内容************
     with ui.card().style("width: 82vw; height: 85vh;"):
@@ -185,24 +185,25 @@ class 标签C(ui.element):
         self,
         序号V: int,
         等级V: 等级E,
-        text: str = "XXX",
-        第一位V: str = "1",
-        第二位V: str = "0",
-        第三位V: str = "0",
-        第四位V: str = "",
+        第一位_索引V: int,
+        第二位_索引V: int,
+        第三位_索引V: int,
+        第四位_索引V: int,
+        零件名VS: int = "XXX",
         后缀V: str = "",
         重名次数V: int = 0,
     ) -> None:
         super().__init__(tag="div")
         self.序号V = 序号V  # 用于存储自身的序号
         self.等级V: 等级E = 等级V
-        self.第一位V: str = 第一位V
-        self.第二位V: str = 第二位V
-        self.第三位V: str = 第三位V
-        self.第四位V: str = 第四位V
-        self.零件名V: str = text
+        self.零件名V: str = 零件名VS
         self.后缀V: str = 后缀V
         self.重名次数V: int = 重名次数V
+
+        self.第一位_索引V: int = 第一位_索引V
+        self.第二位_索引V: int = 第二位_索引V
+        self.第三位_索引V: int = 第三位_索引V
+        self.第四位_索引V: int = 第四位_索引V
 
         self._等级配置V = {
             等级E.一: {"颜色": 常量_颜色["一级"], "位置": 常量_一级_位置},
@@ -210,11 +211,9 @@ class 标签C(ui.element):
             等级E.三: {"颜色": 常量_颜色["三级"], "位置": 常量_三级_位置},
             等级E.四: {"颜色": 常量_颜色["四级"], "位置": 常量_四级_位置},
         }
-        self.配置V = self._等级配置V.get(self.等级V)
-        if not self.配置V:
-            raise ValueError(f"不支持的等级: {self.等级V}")
 
-        self.文本V = self.生成文本F()
+        self.获取等级配置F()
+        self.生成文本F()
 
         pprint(
             f"当前标的签序号：【{self.序号V}】，等级：【{self.等级V}】,文本：【{self.文本V}】，它的配置：{self.配置V}"
@@ -241,14 +240,19 @@ class 标签C(ui.element):
 
     async def 更改F(self):
         if self.checkbox.value:
-            生成器O.修改零件名F()
+            生成器O.重输_零件名F()
 
     def 删除F(self):
         if self.checkbox.value:
             生成器O.删除标签F()
 
-    def 生成文本F(self) -> str:
-        result = (
+    def 生成文本F(self):
+        self.第一位V = 常量_第一位[self.第一位_索引V]
+        self.第二位V = 常量_第二位[self.第二位_索引V]
+        self.第三位V = 常量_第三位[self.第三位_索引V]
+        self.第四位V = 第四位_默认GL[self.第四位_索引V]
+
+        self.文本V = (
             self.第一位V
             + 连接符_默认GS
             + self.第二位V
@@ -260,8 +264,13 @@ class 标签C(ui.element):
             + self.零件名V
             + self.后缀V
         )
-        print(f"生成文本：{result}")
-        return result
+        print(f"生成文本：{self.文本V}")
+
+    def 获取等级配置F(self):
+        self.配置V = self._等级配置V.get(self.等级V)
+        if not self.配置V:
+            self.配置V = self._等级配置V.get(等级E.一)
+            ui.notify(f"不支持的等级: {self.等级V}")
 
 
 class 输入框C(ui.dialog):
@@ -322,11 +331,43 @@ async def 添加标签F():
         当前标签G = 当前标签O.序号V
 
 
+def 提升等级F():
+    if 当前标签G > 0:
+        if 等级E.一 == 等级G:
+            ui.notify("当前标签已为最高级别，无法提升！")
+        elif 等级E.二 == 等级G:
+            生成器O.修改标签等级F(等级E.一)
+        elif 等级E.三 == 等级G:
+            生成器O.修改标签等级F(等级E.二)
+        elif 等级E.四 == 等级G:
+            生成器O.修改标签等级F(等级E.三)
+    else:
+        ui.notify("第一个元素无法提升等级！")
+
+
+def 降低等级F():
+    if 当前标签G > 0:
+        if 等级E.一 == 等级G:
+            生成器O.修改标签等级F(等级E.二)
+        elif 等级E.二 == 等级G:
+            生成器O.修改标签等级F(等级E.三)
+        elif 等级E.三 == 等级G:
+            生成器O.修改标签等级F(等级E.四)
+        elif 等级E.四 == 等级G:
+            ui.notify("当前标签已为最低级别，无法降低！")
+    else:
+        ui.notify("第一个元素无法降低等级！")
+
+
+def 粘贴F():
+    pass
+
+
 ####################################生成器#############################################
 class 标签生成器C:
     def __init__(self):
         self.标注VL: list[标签C] = []  # 储存所有标签类
-        self._标签索引V = 0  # 用于存储 标注VL 列表的最后一个索引值
+        self._长度V = 0  # 用于记录 标注VL 列表的长度
         self.第一位_长度V = len(常量_第一位)
         self.第二位_长度V = len(常量_第二位)
         self.第三位_长度V = len(常量_第三位)
@@ -357,11 +398,14 @@ class 标签生成器C:
         生成区域G.remove(当前标签G)
         self.标注VL.pop(当前标签G)
 
-        count: int = len(self.标注VL)
-        if count > 0:
+        if self._长度V > 0:
             i: int = 当前标签G
-            while i < count:
+            while i < self._长度V:
                 self.标注VL[i].序号V = i
+
+                # 修改后缀，删除的可能与后面某个重复
+                if self.标注VL[i].重名次数V > 0:
+                    self.修改零件名F(i, self.标注VL[i].零件名VS)
                 i += 1
 
             self.标注VL[当前标签G].checkbox.value = True
@@ -370,8 +414,43 @@ class 标签生成器C:
             self.前_标签序号V = 0
             当前标签G = 0
 
-    def 修改标签等级F(self):
-        pass
+    def 修改标签等级F(self, 等级V: 等级E):
+        # 降低标签等级
+        if self.标注VL[当前标签G].等级V < 等级E:
+            if 等级E.二 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
+                self.标注VL[当前标签G].第二位_索引V += 1
+            elif 等级E.三 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
+                self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
+                self.标注VL[当前标签G].第三位_索引V += 1
+            elif 等级E.四 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
+                self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
+                self.标注VL[当前标签G].第三位_索引V = self.标注VL[当前标签G - 1].第三位_索引V
+                self.标注VL[当前标签G].第四位_索引V += 1
+        else:  # 增加标签等级
+            if 等级E.一 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V + 1
+                self.标注VL[当前标签G].第二位_索引V = 命名O.第二位_初始索引V
+                self.标注VL[当前标签G].第三位_索引V = 命名O.第三位_初始索引V
+                self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+            elif 等级E.二 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
+                self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V + 1
+                self.标注VL[当前标签G].第三位_索引V = 命名O.第三位_初始索引V
+                self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+            elif 等级E.三 == 等级V:
+                self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
+                self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
+                self.标注VL[当前标签G].第三位_索引V = self.标注VL[当前标签G - 1].第三位_索引V + 1
+                self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+        # TODO 要对后面的标签索引进行更改
+        # 对当前标签进行更新
+        self.标注VL[当前标签G].等级V = 等级V
+        self.标注VL[当前标签G].获取等级配置F()
+        self.标注VL[当前标签G].生成文本F()
+        self.标注VL[当前标签G].update()
 
     def 添加标签F(self, 零件名V: str = "XXX") -> 标签C:
         """生成指定等级的标签组件"""
@@ -379,45 +458,96 @@ class 标签生成器C:
         global 等级G, 标注GL
 
         if not self.是否_超出索引V:
-            第一位V, 第二位V, 第三位V, 第四位V = self.编号F()
+            self.获取索引F()
             后缀V, 重名次数V = self.零件名_重名_后缀F(零件名V)
-            self.标签O = 标签C(
-                序号V=self._标签索引V,
-                等级V=等级G,
-                text=零件名V,
-                第一位V=第一位V,
-                第二位V=第二位V,
-                第三位V=第三位V,
-                第四位V=第四位V,
-                后缀V=后缀V,
-                重名次数V=重名次数V,
-            )
-            self.标签O.move(生成区域G)
-            self.标注VL.append(self.标签O)
-            self.标注VL[self._标签索引V].checkbox.value = True
-            标注GL.append([等级G, 第一位V, 第二位V, 第三位V, 第四位V, 零件名V, 后缀V])
-            pprint(f"标注G:{标注GL}")
 
-            self.索引递增F()
+            # 如果在尾部添加新建新标签
+            if self._长度V == 0 or self._长度V - 1 == 当前标签G:
+                self.标签O = 标签C(
+                    序号V=self._长度V,
+                    等级V=等级G,
+                    零件名VS=零件名V,
+                    第一位_索引V=self.第一位_索引V,
+                    第二位_索引V=self.第二位_索引V,
+                    第三位_索引V=self.第三位_索引V,
+                    第四位_索引V=self.第四位_索引V,
+                    后缀V=后缀V,
+                    重名次数V=重名次数V,
+                )
+                self.标签O.move(target_container=生成区域G, target_index=self._长度V)
+                self.标注VL.append(self.标签O)
+                标注GL.append(
+                    [
+                        等级G,
+                        self.标签O.第一位V,
+                        self.标签O.第二位V,
+                        self.标签O.第三位V,
+                        self.标签O.第四位V,
+                        零件名V,
+                        后缀V,
+                    ]
+                )
+            # 如果在中间添加新建新标签
+            else:
+                self.标签O = 标签C(
+                    序号V=当前标签G + 1,
+                    等级V=等级G,
+                    零件名VS=零件名V,
+                    第一位_索引V=self.第一位_索引V,
+                    第二位_索引V=self.第二位_索引V,
+                    第三位_索引V=self.第三位_索引V,
+                    第四位_索引V=self.第四位_索引V,
+                    后缀V=后缀V,
+                    重名次数V=重名次数V,
+                )
+                self.标签O.move(target_container=生成区域G, target_index=当前标签G + 1)
+                self.标注VL.insert(当前标签G + 1, self.标签O)
+                标注GL.insert(
+                    当前标签G + 1,
+                    [
+                        等级G,
+                        self.标签O.第一位V,
+                        self.标签O.第二位V,
+                        self.标签O.第三位V,
+                        self.标签O.第四位V,
+                        零件名V,
+                        后缀V,
+                    ],
+                )
+
+                # 更改后续标签的序号
+                i = 当前标签G + 2
+                while i <= self._长度V:
+                    self.标注VL[i].序号V += 1
+                    # 修改后缀，后边的标签可能与新加的重名，所以需要修改
+                    self.修改零件名F(i, self.标注VL[i].零件名VS)
+                    i += 1
+
+            self.标签O.checkbox.value = True  # 选中新生成的标签，并切换当前标签G
+            pprint(f"标注G:{标注GL}")
+            self._长度V += 1
             return self.标签O
 
         return None
 
-    async def 修改零件名F(self):
+    async def 重输_零件名F(self):
         输入V = await 输入框C()
         if 输入V:
-            self.标注VL[当前标签G].零件名V = 输入V
-            后缀V, 重名次数V = self.零件名_重名_后缀F(输入V)
-            self.标注VL[当前标签G].后缀V = 后缀V
-            self.标注VL[当前标签G].重名次数V = 重名次数V
-            文本V = self.标注VL[当前标签G].生成文本F()
-            self.标注VL[当前标签G].lable.set_text(文本V)
+            self.修改零件名F(当前标签G, 输入V)
+
+    def 修改零件名F(self, 序号V: int, 输入V: str):
+        self.标注VL[序号V].零件名V = 输入V
+        后缀V, 重名次数V = self.零件名_重名_后缀F(输入V)
+        self.标注VL[序号V].后缀V = 后缀V
+        self.标注VL[序号V].重名次数V = 重名次数V
+        文本V = self.标注VL[序号V].生成文本F()
+        self.标注VL[序号V].lable.set_text(文本V)
 
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
-        if self._标签索引V > 0:
+        if self._长度V > 0:
             i: int = 0
-            while i < self._标签索引V:
+            while i <= 当前标签G:
                 if self.标注VL[i].零件名V == 零件名V:
                     result += 1
                 i += 1
@@ -431,74 +561,59 @@ class 标签生成器C:
                     """)
         return 后缀V, result
 
-    def 编号F(self):
-        # TODO 根据等级以及上一个标签的位值来确定某个位的数值
-        # 比如等级为2，上一个标签的第一位为“2”，那么此标签的第一位也应该为“2”
-        if self.第一位_索引V < self.第一位_长度V:
-            第一位V = 常量_第一位[self.第一位_索引V]
-        if self.第二位_索引V < self.第二位_长度V:
-            第二位V = 常量_第二位[self.第二位_索引V]
-        if self.第三位_索引V < self.第三位_长度V:
-            第三位V = 常量_第三位[self.第三位_索引V]
-        if self.第四位_索引V < self.第四位_长度V:
-            第四位V = 第四位_默认GL[self.第四位_索引V]
-
-        return 第一位V, 第二位V, 第三位V, 第四位V
-
-    def 索引递增F(self):
-        # ************索引递增条件************
+    def 获取索引F(self):
         global 等级G
         self.是否_超出索引V: bool = False
-        self._标签索引V += 1
-        if 等级E.一 == 等级G:
-            if self.第一位_索引V < self.第一位_长度V - 1:
-                self.第一位_索引V += 1
-                # 当第一位递增时，其他位索引重置为 0
-                self.第二位_索引V: int = 命名O.第二位_初始索引V
-                self.第三位_索引V: int = 命名O.第三位_初始索引V
-                self.第四位_索引V: int = 命名O.第四位_初始索引V
-            else:
-                # 当第一位升到头后，切换等级
-                等级G = 等级E.二
-                ui.notify("""
-                    第一位已到极限！请妥善安排命名结构！
-                    源自：标签生成器C.索引递增F
-                    """)
-        elif 等级E.二 == 等级G:
-            if 命名O.第二位_初始索引V < self.第二位_长度V - 1:
-                命名O.第二位_初始索引V += 1
-                self.第三位_索引V: int = 命名O.第三位_初始索引V
-                self.第四位_索引V: int = 命名O.第四位_初始索引V
-            else:
-                等级G = 等级E.三
-                ui.notify("""
-                    第二位已到极限！请妥善安排命名结构！
-                    源自：标签生成器C.索引递增F
-                    """)
-        elif 等级E.三 == 等级G:
-            if 命名O.第三位_初始索引V < self.第三位_长度V - 1:
-                命名O.第三位_初始索引V += 1
-                self.第四位_索引V: int = 命名O.第四位_初始索引V
-            else:
-                等级G = 等级E.四
-                ui.notify("""
-                    第三位已到极限！请妥善安排命名结构！
-                    源自：标签生成器C.索引递增F
-                    """)
-        elif 等级E.四 == 等级G:
-            if 命名O.第四位_初始索引V < self.第四位_长度V - 1:
-                命名O.第四位_初始索引V += 1
-            else:
-                self.是否_超出索引V = True
-                ui.notify("""
-                    第四位已到极限！请妥善安排命名结构！
-                    源自：标签生成器C.索引递增F
-                    """)
-
-    @property
-    def 当前序号(self) -> int:
-        """获取当前自动生成的序号"""
-        return self._标签索引V
+        if self._长度V > 0:
+            if 等级E.一 == 等级G:
+                if self.第一位_索引V < self.第一位_长度V - 1:
+                    self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V + 1
+                    self.第二位_索引V = 命名O.第二位_初始索引V
+                    self.第三位_索引V = 命名O.第三位_初始索引V
+                    self.第四位_索引V = 命名O.第四位_初始索引V
+                else:
+                    # 当第一位索引加到头后，切换等级
+                    等级G = 等级E.二
+                    ui.notify("""
+                        第一位已到极限！请妥善安排命名结构！
+                        源自：标签生成器C.索引递增F
+                        """)
+            elif 等级E.二 == 等级G:
+                if 命名O.第二位_初始索引V < self.第二位_长度V - 1:
+                    self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
+                    self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V + 1
+                    self.第三位_索引V = 命名O.第三位_初始索引V
+                    self.第四位_索引V = 命名O.第四位_初始索引V
+                else:
+                    等级G = 等级E.三
+                    ui.notify("""
+                        第二位已到极限！请妥善安排命名结构！
+                        源自：标签生成器C.索引递增F
+                        """)
+            elif 等级E.三 == 等级G:
+                if 命名O.第三位_初始索引V < self.第三位_长度V - 1:
+                    self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
+                    self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V
+                    self.第三位_索引V = self.标注VL[当前标签G].第三位_索引V + 1
+                    self.第四位_索引V = 命名O.第四位_初始索引V
+                else:
+                    等级G = 等级E.四
+                    ui.notify("""
+                        第三位已到极限！请妥善安排命名结构！
+                        源自：标签生成器C.索引递增F
+                        """)
+            elif 等级E.四 == 等级G:
+                if 命名O.第四位_初始索引V < self.第四位_长度V - 1:
+                    self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
+                    self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V
+                    self.第三位_索引V = self.标注VL[当前标签G].第三位_索引V
+                    self.第四位_索引V = self.标注VL[当前标签G].第四位_索引V
+                else:
+                    self.是否_超出索引V = True
+                    ui.notify("""
+                        第四位已到极限！请妥善安排命名结构！
+                        源自：标签生成器C.索引递增F
+                        """)
 
 
 ####################################入口#############################################
