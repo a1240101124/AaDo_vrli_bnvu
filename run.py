@@ -12,6 +12,7 @@ r"""
 
 # 导入常用模块
 from dataclasses import dataclass
+from encodings import mac_greek
 from enum import IntEnum
 from pathlib import Path
 from pprint import pprint
@@ -359,11 +360,11 @@ def 提升等级F():
         if 等级E.一 == 等级G:
             ui.notify("当前标签已为最高级别，无法提升！")
         elif 等级E.二 == 等级G:
-            生成器O.修改标签等级F(等级E.一)
+            生成器O.修改标签等级F(当前标签G, 等级E.一)
         elif 等级E.三 == 等级G:
-            生成器O.修改标签等级F(等级E.二)
+            生成器O.修改标签等级F(当前标签G, 等级E.二)
         elif 等级E.四 == 等级G:
-            生成器O.修改标签等级F(等级E.三)
+            生成器O.修改标签等级F(当前标签G, 等级E.三)
     else:
         ui.notify("第一个元素无法提升等级！")
 
@@ -371,11 +372,11 @@ def 提升等级F():
 def 降低等级F():
     if 当前标签G > 0:  # 排除第一个元素
         if 等级E.一 == 等级G:
-            生成器O.修改标签等级F(等级E.二)
+            生成器O.修改标签等级F(当前标签G, 等级E.二)
         elif 等级E.二 == 等级G:
-            生成器O.修改标签等级F(等级E.三)
+            生成器O.修改标签等级F(当前标签G, 等级E.三)
         elif 等级E.三 == 等级G:
-            生成器O.修改标签等级F(等级E.四)
+            生成器O.修改标签等级F(当前标签G, 等级E.四)
         elif 等级E.四 == 等级G:
             ui.notify("降低等级F：当前标签已为最低级别，无法降低！")
     else:
@@ -447,21 +448,21 @@ class 标签生成器C:
             self.前_标签序号V = 0
             当前标签G = 0
 
-    def 修改标签等级F(self, 目标等级VE: 等级E):
+    def 修改标签等级F(self, 选定序号V: int, 目标等级VE: 等级E):
         # 降低标签等级
-        if 目标等级VE > self.标注VL[当前标签G].等级VE:
+        if 目标等级VE > self.标注VL[选定序号V].等级VE:
             # 从一级将为二级
             if 等级E.二 == 目标等级VE:
                 # 首先需要查看是否有空位
-                if self.标注VL[当前标签G - 1].第二位_索引V < self.第二位_长度V - 1:
-                    self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
-                    self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V + 1
+                if self.标注VL[选定序号V - 1].第二位_索引V < self.第二位_长度V - 1:
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                    self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V + 1
 
                     # 修改成功后，修改等级；修改不成功则不动
-                    self.修改等级F(目标等级VE, 当前标签G)
+                    self.修改等级F(目标等级VE, 选定序号V)
 
                     # 某个标签从一级降维二级，那么就需要修改后面所有标签的的第一位索引
-                    i = 当前标签G + 1
+                    i = 选定序号V + 1
                     while i < self._长度V:
                         self.标注VL[i].第一位_索引V -= 1
                         self.更新标签F(i)
@@ -471,13 +472,13 @@ class 标签生成器C:
 
             # 从二级降为三级
             elif 等级E.三 == 目标等级VE:
-                if self.标注VL[当前标签G].第二位_索引V > 命名O.第二位_初始索引V + 1:  # 排除类似于110这种
-                    if self.标注VL[当前标签G - 1].第三位_索引V < self.第三位_长度V - 1:
-                        self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
-                        self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
-                        self.标注VL[当前标签G].第三位_索引V = self.标注VL[当前标签G - 1].第三位_索引V + 1
+                if self.标注VL[选定序号V].第二位_索引V > 命名O.第二位_初始索引V + 1:  # 排除类似于110这种
+                    if self.标注VL[选定序号V - 1].第三位_索引V < self.第三位_长度V - 1:
+                        self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                        self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
+                        self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V + 1
 
-                        self.修改等级F(目标等级VE, 当前标签G)
+                        self.修改等级F(目标等级VE, 选定序号V)
 
                         self.修改_标号重标注F(等级E.二, 等级E.一)
                     else:
@@ -487,14 +488,14 @@ class 标签生成器C:
 
             # 从三级降为四级
             elif 等级E.四 == 目标等级VE:
-                if self.标注VL[当前标签G].第三位_索引V > 命名O.第三位_初始索引V + 1:
-                    if self.标注VL[当前标签G - 1].第四位_索引V < self.第四位_长度V - 1:
-                        self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
-                        self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
-                        self.标注VL[当前标签G].第三位_索引V = self.标注VL[当前标签G - 1].第三位_索引V
-                        self.标注VL[当前标签G].第四位_索引V = self.标注VL[当前标签G - 1].第四位_索引V + 1
+                if self.标注VL[选定序号V].第三位_索引V > 命名O.第三位_初始索引V + 1:
+                    if self.标注VL[选定序号V - 1].第四位_索引V < self.第四位_长度V - 1:
+                        self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                        self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
+                        self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V
+                        self.标注VL[选定序号V].第四位_索引V = self.标注VL[选定序号V - 1].第四位_索引V + 1
 
-                        self.修改等级F(目标等级VE, 当前标签G)
+                        self.修改等级F(目标等级VE, 选定序号V)
 
                         self.修改_标号重标注F(等级E.三, 等级E.二)
                     else:
@@ -504,53 +505,118 @@ class 标签生成器C:
 
         # 提高标签等级
         else:
+            # 从二级升为一级
             if 等级E.一 == 目标等级VE:
                 # 查看第一位的索引是否有空位，避免第一位索引已经到极限，导致超出索引范围的问题
                 if self.第一位_索引V < self.第一位_长度V - 1:
-                    self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V + 1
-                    self.标注VL[当前标签G].第二位_索引V = 命名O.第二位_初始索引V
-                    self.标注VL[当前标签G].第三位_索引V = 命名O.第三位_初始索引V
-                    self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V + 1
+                    self.标注VL[选定序号V].第二位_索引V = 命名O.第二位_初始索引V
+                    self.标注VL[选定序号V].第三位_索引V = 命名O.第三位_初始索引V
+                    self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
 
-                    self.修改等级F(目标等级VE, 当前标签G)
+                    self.修改等级F(目标等级VE, 选定序号V)
 
-                    i = 当前标签G + 1
+                    # 当前标签之后的所有标签第一位索引+1，即向后移一位
+                    i = 选定序号V + 1
                     while i < self._长度V:
                         self.标注VL[i].第一位_索引V += 1
                         self.更新标签F(i)
                         i += 1
 
-                    self.修改_标号重标注F(等级E.二, 等级E.一)
+                    # 修改子标签的等级
+                    j = 选定序号V + 1
+                    while j < self._长度V:
+                        if 等级E.二 == self.标注VL[j].等级VE or 等级E.一 == self.标注VL[j].等级VE:
+                            break
+                        elif 等级E.三 == self.标注VL[j].等级VE:
+                            self.修改标签等级F(j, 等级E.二)
+                        elif 等级E.四 == self.标注VL[j].等级VE:
+                            self.修改标签等级F(j, 等级E.三)
+
+                        j += 1
+
+                    # 修改后续标签的第二位索引，直到遇到一级标签截至
+                    m = 选定序号V + 1
+                    while m < self._长度V:
+                        if 等级E.一 == self.标注VL[m].等级VE:
+                            break
+
+                        self.标注VL[m].第二位_索引V -= 1
+                        self.更新标签F(m)
+
+                        m += 1
+
                 else:
                     ui.notify("修改标签等级F-提高等级：第一位位置已满，无法提升等级")
 
+            # 从三级升为二级
             elif 等级E.二 == 目标等级VE:
-                if self.计数F(等级E.二, 等级E.一) < self.第二位_长度V - 1:
-                    self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
-                    self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V + 1
-                    self.标注VL[当前标签G].第三位_索引V = 命名O.第三位_初始索引V
-                    self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+                if self.计数F(等级E.二, 等级E.一) < self.第二位_长度V:
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                    self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V + 1
+                    self.标注VL[选定序号V].第三位_索引V = 命名O.第三位_初始索引V
+                    self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
 
-                    self.修改等级F(目标等级VE, 当前标签G)
+                    self.修改等级F(目标等级VE, 选定序号V)
 
-                    self.修改_标号重标注F(等级E.三)
+                    # 当前标签之后的所有标签第二位索引+1，即向后移一位
+                    i = 选定序号V + 1
+                    while i < self._长度V:
+                        if 等级E.一 == self.标注VL[j].等级VE:
+                            break
+
+                        self.标注VL[i].第二位_索引V += 1
+                        self.更新标签F(i)
+                        i += 1
+
+                    # 修改子标签的第三位_索引V
+                    j = 选定序号V + 1
+                    while j < self._长度V:
+                        if 等级E.二 == self.标注VL[j].等级VE or 等级E.一 == self.标注VL[j].等级VE:
+                            break
+
+                        self.标注VL[j].第三位_索引V = self.标注VL[j - 1].第三位_索引V + 1
+                        self.更新标签F(j)
+                        j += 1
+
                 else:
                     ui.notify("修改标签等级F-提高等级：第二位位置已满，无法提升等级")
 
+            # 从四级升为三级
             elif 等级E.三 == 目标等级VE:
-                if self.计数F(等级E.三, 等级E.二) < self.第三位_长度V - 1:
-                    self.标注VL[当前标签G].第一位_索引V = self.标注VL[当前标签G - 1].第一位_索引V
-                    self.标注VL[当前标签G].第二位_索引V = self.标注VL[当前标签G - 1].第二位_索引V
-                    self.标注VL[当前标签G].第三位_索引V = self.标注VL[当前标签G - 1].第三位_索引V + 1
-                    self.标注VL[当前标签G].第四位_索引V = 命名O.第四位_初始索引V
+                if self.计数F(等级E.三, 等级E.二) < self.第三位_长度V:
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                    self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
+                    self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V + 1
+                    self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
 
-                    self.修改等级F(目标等级VE, 当前标签G)
+                    self.修改等级F(目标等级VE, 选定序号V)
 
-                    self.修改_标号重标注F(等级E.四)
+                    # 当前标签之后的所有标签第三位索引+1，即向后移一位
+                    i = 选定序号V + 1
+                    while i < self._长度V:
+                        if 等级E.二 == self.标注VL[j].等级VE or 等级E.一 == self.标注VL[i].等级VE:
+                            break
+
+                        self.标注VL[i].第三位_索引V += 1
+                        self.更新标签F(i)
+                        i += 1
+
+                    # 修改子标签的第四位_索引V
+                    j = 选定序号V + 1
+                    while j < self._长度V:
+                        if 等级E.四 == self.标注VL[j].等级VE:
+                            self.标注VL[j].第四位_索引V = self.标注VL[j - 1].第三位_索引V + 1
+                            self.更新标签F(j)
+                        else:
+                            break
+
+                        j += 1
+
                 else:
                     ui.notify("修改标签等级F-提高等级：第三位位置已满，无法提升等级")
 
-        self.更新标签F(当前标签G)
+        self.更新标签F(选定序号V)
 
         pprint(f"""
 **************************标签生成器C--修改标签等级F**********************
@@ -562,16 +628,17 @@ class 标签生成器C:
     def 计数F(self, 目标等级VE: 等级E, 截至等级VE: 等级E) -> int:
         count: int = 0
         if 等级E.二 == 目标等级VE:
-            count = self.标注VL[当前标签G - 1].第二位_索引V
+            count = self.标注VL[当前标签G].第二位_索引V
         elif 等级E.三 == 目标等级VE:
-            count = self.标注VL[当前标签G - 1].第三位_索引V
+            count = self.标注VL[当前标签G].第三位_索引V
 
         i = 当前标签G + 1
         while i < self._长度V:
             if 目标等级VE == self.标注VL[i].等级VE:
                 count += 1
             elif 截至等级VE == self.标注VL[i].等级VE:
-                return count
+                break
+
             i += 1
 
         return count
@@ -580,7 +647,7 @@ class 标签生成器C:
         i = 当前标签G + 1
         while i < self._长度V:
             if self.标注VL[i].等级VE == 截至等级VE:
-                return  # 循环到截至等级的标签，就不需要在修改了
+                break  # 循环到截至等级的标签，就不需要在修改了
             else:
                 if 等级E.二 == 目标等级VE and self.标注VL[i].第二位_索引V > 0:
                     self.标注VL[i].第二位_索引V -= 1
