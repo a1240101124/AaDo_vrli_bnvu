@@ -18,7 +18,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
-
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -124,8 +123,20 @@ async def _() -> None:
             ui.button(text="新建", on_click=添加标签F)
             ui.button(text="前", on_click=提升等级F)
             ui.button(text="后", on_click=降低等级F)
-            ui.space()
             ui.button(text="粘贴", on_click=粘贴F)
+
+            ui.separator()
+            ui.label("****CAD****")
+            ui.button(text="绑定CAD")
+            ui.button(text="标记")
+            ui.button(text="清空")
+            ui.button(text="输入")
+
+            ui.separator()
+            ui.label("****图片****")
+            ui.button(text="选择图片")
+            ui.button(text="标记")
+            ui.button(text="输入")
 
     # ************主要内容************
     with ui.card().style("width: 82vw; height: 85vh;"):
@@ -228,12 +239,8 @@ class 标签C(ui.element):
     # ui.state() 和  @ui.refreshable 实现了状态持久化和UI自动刷新。
     @ui.refreshable
     def 动态刷新F(self):
-        self.位置V, self.设置位置F = ui.state(self.配置V["位置"])
-        self.color, self.设置颜色F = ui.state(self.配置V["颜色"])
-        self.text, self.设置文本F = ui.state(self.文本V)
-
-        ui.element("div").style(f"width: {self.位置V}px;")
-        with ui.card().tight().style(f"background-color: {self.color}"):
+        ui.element("div").style(f"width: {self.配置V['位置']}px;")
+        with ui.card().tight().style(f"background-color: {self.配置V['颜色']}"):
             with ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content;"):
                 (
                     ui.checkbox()
@@ -241,7 +248,7 @@ class 标签C(ui.element):
                     .on_value_change(self.选择标签F)
                     .classes("m-0 p-0 h-4 w-4 shrink-0")
                 )
-                ui.label(self.text).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
+                ui.label(self.文本V).classes("m-0 p-0 shrink-0").on("click", lambda: self.更改F())
                 ui.button(icon="add_circle", on_click=添加标签F).classes(
                     "m-0 p-0 h-4 w-4 rounded-full bg-transparent border-none text-xs min-h-0 min-w-0"
                 ).style("min-width: 0 !important; min-height: 0 !important")
@@ -255,9 +262,9 @@ class 标签C(ui.element):
             刷新次数：{self.刷新次数V}
             索引：{self.序号V}
             等级：{self.等级VE}
-            text：{self.text}
-            位置V：{self.位置V}
-            color：{self.color}
+            text：{self.文本V}
+            位置V：{self.配置V["位置"]}
+            color：{self.配置V["颜色"]}
             ########################################
             """)
 
@@ -267,7 +274,7 @@ class 标签C(ui.element):
 
     async def 更改F(self):
         if self.是否_checkbox_选中:
-            生成器O.重输_零件名F()
+            await 生成器O.重输_零件名F()
 
     def 删除F(self):
         if self.是否_checkbox_选中:
@@ -297,6 +304,11 @@ class 标签C(ui.element):
         if not self.配置V:
             self.配置V = self._等级配置V.get(等级E.一)
             ui.notify(f"不支持的等级: {self.等级VE}")
+
+    def 刷新标签F(self):
+        self.获取等级配置F()
+        self.生成文本F()
+        self.动态刷新F.refresh()
 
 
 class 输入框C(ui.dialog):
@@ -422,7 +434,7 @@ class 标签生成器C:
                 前_标签-索引：{self.前_标签序号V}，checkbox.value：{self.标注VL[self.前_标签序号V].是否_checkbox_选中}
                 ----------当前
                 当前标签-索引：{当前标签G}， checkbox.value：{self.标注VL[当前标签G].是否_checkbox_选中}
-                当前标签名称：{self.标注VL[当前标签G].text}
+                当前标签名称：{self.标注VL[当前标签G].文本V}
                 等级G：{等级G}
             ####################################################################
             """)
@@ -675,11 +687,7 @@ class 标签生成器C:
 
     def 更新标签F(self, 序号V: int):
         global 标注GL
-        self.标注VL[序号V].获取等级配置F()
-        self.标注VL[序号V].生成文本F()
-        self.标注VL[序号V].设置位置F(self.标注VL[序号V].配置V["位置"])
-        self.标注VL[序号V].设置颜色F(self.标注VL[序号V].配置V["颜色"])
-        self.标注VL[序号V].设置文本F(self.标注VL[序号V].文本V)
+        self.标注VL[序号V].刷新标签F()
 
         item: dict = [
             self.标注VL[序号V].等级VE,
@@ -782,20 +790,21 @@ class 标签生成器C:
             self.修改零件名F(当前标签G, 输入V)
 
     def 修改零件名F(self, 序号V: int, 输入V: str):
-        self.标注VL[序号V].零件名V = 输入V
         后缀V, 重名次数V = self.零件名_重名_后缀F(输入V)
+        self.标注VL[序号V].零件名V = 输入V
         self.标注VL[序号V].后缀V = 后缀V
         self.标注VL[序号V].重名次数V = 重名次数V
-        self.标注VL[序号V].生成文本F()
-        self.标注VL[序号V].设置文本F(self.标注VL[序号V].文本V)
+        self.标注VL[序号V].刷新标签F()
 
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
+
         if self._长度V > 0:
             i: int = 0
             while i <= 当前标签G:
                 if self.标注VL[i].零件名V == 零件名V:
                     result += 1
+                    print(f"后缀：{self.标注VL[i].零件名V},{零件名V},{result},{i}")
                 i += 1
 
         if result < self.后缀_长度V:
@@ -805,6 +814,7 @@ class 标签生成器C:
                     重复的零件名太多了，已经超出上限！
                     源自：标签生成器C.零件名_重名_后缀F
                     """)
+
         return 后缀V, result
 
     def 获取索引F(self):
