@@ -2,7 +2,7 @@ r"""
 创建者: 阿斗是只猫
 创建日期: 2025-04-09
 最后编辑人: 阿斗是只猫
-最后编辑时间: 2025-05-02
+最后编辑时间: 2025-05-10
 说明:
 
     如有问题或建议，请联系微信公众号：【阿斗的小窝】
@@ -12,12 +12,12 @@ r"""
 
 # 导入常用模块
 from dataclasses import dataclass
-from encodings import mac_greek
 from enum import IntEnum
 from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
+
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -121,27 +121,28 @@ async def _() -> None:
     with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
         with ui.column():
             ui.button(text="新建", on_click=添加标签F)
-            ui.button(text="前", on_click=提升等级F)
-            ui.button(text="后", on_click=降低等级F)
+            with ui.row():
+                ui.button(text="前", on_click=提升等级F)
+                ui.button(text="后", on_click=降低等级F)
             ui.button(text="粘贴", on_click=粘贴F)
 
             ui.separator()
-            ui.label("****CAD****")
+            ui.button(text="输入其他标记")
+
+            ui.separator()
             ui.button(text="绑定CAD")
             ui.button(text="标记")
             ui.button(text="清空")
-            ui.button(text="输入")
 
             ui.separator()
-            ui.label("****图片****")
             ui.button(text="选择图片")
             ui.button(text="标记")
-            ui.button(text="输入")
 
     # ************主要内容************
     with ui.card().style("width: 82vw; height: 85vh;"):
         global 生成区域G
-        生成区域G = ui.column(align_items="start").classes("w-full")
+        with ui.scroll_area().style("width: 80vw; height: 80vh;"):
+            生成区域G = ui.column(align_items="start").classes("w-full")
 
 
 class 命名规则面板C(ui.dialog):
@@ -260,7 +261,7 @@ class 标签C(ui.element):
         pprint(f"""
             ***************************标签对象-动态刷新***************************
             刷新次数：{self.刷新次数V}
-            索引：{self.序号V}
+            序号V：{self.序号V}
             等级：{self.等级VE}
             text：{self.文本V}
             位置V：{self.配置V["位置"]}
@@ -326,14 +327,30 @@ class 输入框C(ui.dialog):
 
 ####################################事件方法#############################################
 async def 读取文件F() -> None:
-    global 标注GL
-
     await 获取路径F()
 
     if 是否_sqlite(项目路径G):
         项目O = 项目C()
-        标注GL = 项目O.读取F(项目路径G)
+        标注VL: list[list] = 项目O.读取F(项目路径G)
         项目O.关闭连接F()
+
+        # 依次创建标签
+        for item in 标注VL:
+            等级V = item[0]
+            零件名VS = item[5]
+            第一位_索引V = item[1]
+            第二位_索引V = item[2]
+            第三位_索引V = item[3]
+            第四位_索引V = item[4]
+            后缀V = item[6]
+            重名次数V = item[7]
+            生成器O.生成标签F(等级V, 第一位_索引V, 第二位_索引V, 第三位_索引V, 第四位_索引V, 后缀V, 重名次数V, 零件名VS)
+
+        pprint(f"""
+                *****************************读取文件F-标注G********************************
+                标注GL：{标注VL}
+                ####################################
+                """)
     else:
         ui.notify("你选中的文件不是db文件，请重新选择！")
 
@@ -363,8 +380,11 @@ def 是否_sqlite(path: Path):
 
 async def 添加标签F():
     global 当前标签G
-    text = await 输入框C()
-    生成器O.添加标签F(text)
+    text: str = await 输入框C()
+    if text:
+        生成器O.添加标签F(text)
+    else:
+        ui.notify("添加标签F：输入为空，请重新输入！")
 
 
 def 提升等级F():
@@ -460,80 +480,110 @@ class 标签生成器C:
             self.前_标签序号V = 0
             当前标签G = 0
 
-    def 修改标签等级F(self, 选定序号V: int, 目标等级VE: 等级E):
+    def 修改标签等级F(self, 选定序号V: int, 修改后等级VE: 等级E):
+        global 等级G
         # 降低标签等级
-        if 目标等级VE > self.标注VL[选定序号V].等级VE:
-            # 从一级将为二级
-            if 等级E.二 == 目标等级VE:
+        if 修改后等级VE > self.标注VL[选定序号V].等级VE:
+            # 将当前标签的等级从一级降为二级
+            if 等级E.二 == 修改后等级VE:
                 # 首先需要查看是否有空位
                 if self.标注VL[选定序号V - 1].第二位_索引V < self.第二位_长度V - 1:
                     self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
                     self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V + 1
 
                     # 修改成功后，修改等级；修改不成功则不动
-                    self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
                     # 某个标签从一级降维二级，那么就需要修改后面所有标签的的第一位索引
-                    i = 选定序号V + 1
+                    self.修改第一位索引F(选定序号V, False)
+
+                    # 降低原二级及三级子标签的等级
+                    i: int = 选定序号V + 1
                     while i < self._长度V:
-                        self.标注VL[i].第一位_索引V -= 1
-                        self.更新标签F(i)
+                        if 等级E.一 == self.标注VL[i].等级VE:
+                            break
+                        elif 等级E.二 == self.标注VL[i].等级VE:
+                            self.修改标签等级F(i, 等级E.三)
+                        elif 等级E.三 == self.标注VL[i].等级VE:
+                            self.修改标签等级F(i, 等级E.四)
+                        elif 等级E.四 == self.标注VL[i].等级VE:
+                            continue
+
                         i += 1
+
+                    # 修改成功后，避免对子标签的等级修改，影响到全局参数【等级G】的数值
+                    等级G = 修改后等级VE
+
                 else:
                     ui.notify("修改标签等级F-降低等级：第二位位置已满，无法降低等级")
 
-            # 从二级降为三级
-            elif 等级E.三 == 目标等级VE:
-                if self.标注VL[选定序号V].第二位_索引V > 命名O.第二位_初始索引V + 1:  # 排除类似于110这种
-                    if self.标注VL[选定序号V - 1].第三位_索引V < self.第三位_长度V - 1:
-                        self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
-                        self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
-                        self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V + 1
+            # 将当前标签的等级从二级降为三级
+            elif 等级E.三 == 修改后等级VE:
+                # if self.标注VL[选定序号V].第二位_索引V > 命名O.第二位_初始索引V + 1:  # 排除类似于110这种
+                if self.标注VL[选定序号V - 1].第三位_索引V < self.第三位_长度V - 1:
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                    self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
+                    self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V + 1
 
-                        self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
-                        self.修改_标号重标注F(等级E.二, 等级E.一)
-                    else:
-                        ui.notify("修改标签等级F-降低等级：第三位位置已满，无法降低等级")
+                    # 修改后续同级标签的标号
+                    self.标号重标注_减F(等级E.二, 等级E.一)
+
+                    # 将子标签（即三级标签）的等级从三级降为四级
+                    j = 选定序号V + 1
+                    while j < self._长度V:
+                        if 等级E.一 == self.标注VL[j].等级VE or 等级E.二 == self.标注VL[j].等级VE:
+                            break
+                        elif 等级E.三 == self.标注VL[j].等级VE:
+                            self.修改标签等级F(j, 等级E.四)
+                        elif 等级E.四 == self.标注VL[j].等级VE:
+                            continue
+
+                        j += 1
+
+                    # 避免对子标签的等级修改，影响到全局参数【等级G】的数值
+                    等级G = 修改后等级VE
                 else:
-                    ui.notify("修改标签等级F-降低等级：当前标签为第二位的领头标签，无法降低等级")
+                    ui.notify("修改标签等级F-降低等级：第三位位置已满，无法降低等级")
+                # else:
+                #     ui.notify("修改标签等级F-降低等级：当前标签为第二位的领头标签，无法降低等级")
 
-            # 从三级降为四级
-            elif 等级E.四 == 目标等级VE:
-                if self.标注VL[选定序号V].第三位_索引V > 命名O.第三位_初始索引V + 1:
-                    if self.标注VL[选定序号V - 1].第四位_索引V < self.第四位_长度V - 1:
-                        self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
-                        self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
-                        self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V
-                        self.标注VL[选定序号V].第四位_索引V = self.标注VL[选定序号V - 1].第四位_索引V + 1
+            # 将当前标签的等级从三级降为四级
+            elif 等级E.四 == 修改后等级VE:
+                # if self.标注VL[选定序号V].第三位_索引V > 命名O.第三位_初始索引V + 1:
+                if self.标注VL[选定序号V - 1].第四位_索引V < self.第四位_长度V - 1:
+                    self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
+                    self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
+                    self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V
+                    self.标注VL[选定序号V].第四位_索引V = self.标注VL[选定序号V - 1].第四位_索引V + 1
 
-                        self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
-                        self.修改_标号重标注F(等级E.三, 等级E.二)
-                    else:
-                        ui.notify("修改标签等级F-降低等级：第四位位置已满，无法降低等级")
+                    # 修改后续同级三级标签的标号
+                    self.标号重标注_减F(等级E.三, 等级E.二)
+
+                    # 修改子标签的第四位_索引V
+                    self.增加_四级_索引F(选定序号V)
                 else:
-                    ui.notify("修改标签等级F-降低等级：当前标签为第三位的领头标签，无法降低等级")
+                    ui.notify("修改标签等级F-降低等级：第四位位置已满，无法降低等级")
+                # else:
+                #     ui.notify("修改标签等级F-降低等级：当前标签为第三位的领头标签，无法降低等级")
 
         # 提高标签等级
         else:
-            # 从二级升为一级
-            if 等级E.一 == 目标等级VE:
+            # 将当前标签的等级从二级升为一级
+            if 等级E.一 == 修改后等级VE:
                 # 查看第一位的索引是否有空位，避免第一位索引已经到极限，导致超出索引范围的问题
                 if self.第一位_索引V < self.第一位_长度V - 1:
                     self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V + 1
                     self.标注VL[选定序号V].第二位_索引V = 命名O.第二位_初始索引V
                     self.标注VL[选定序号V].第三位_索引V = 命名O.第三位_初始索引V
                     self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
-
-                    self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
                     # 当前标签之后的所有标签第一位索引+1，即向后移一位
-                    i = 选定序号V + 1
-                    while i < self._长度V:
-                        self.标注VL[i].第一位_索引V += 1
-                        self.更新标签F(i)
-                        i += 1
+                    self.修改第一位索引F(选定序号V, True)
 
                     # 修改子标签的等级
                     j = 选定序号V + 1
@@ -548,82 +598,68 @@ class 标签生成器C:
                         j += 1
 
                     # 修改后续标签的第二位索引，直到遇到一级标签截至
-                    m = 选定序号V + 1
-                    while m < self._长度V:
-                        if 等级E.一 == self.标注VL[m].等级VE:
-                            break
+                    self.增加_二级_索引F(选定序号V)
 
-                        self.标注VL[m].第二位_索引V -= 1
-                        self.更新标签F(m)
-
-                        m += 1
+                    # 避免对子标签的等级修改，影响到全局参数【等级G】的数值
+                    等级G = 修改后等级VE
 
                 else:
                     ui.notify("修改标签等级F-提高等级：第一位位置已满，无法提升等级")
 
-            # 从三级升为二级
-            elif 等级E.二 == 目标等级VE:
+            # 将当前标签的等级从三级升为二级
+            elif 等级E.二 == 修改后等级VE:
                 if self.计数F(等级E.二, 等级E.一) < self.第二位_长度V:
                     self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
                     self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V + 1
                     self.标注VL[选定序号V].第三位_索引V = 命名O.第三位_初始索引V
                     self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
-
-                    self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
                     # 当前标签之后的所有标签第二位索引+1，即向后移一位
-                    i = 选定序号V + 1
-                    while i < self._长度V:
-                        if 等级E.一 == self.标注VL[j].等级VE:
-                            break
+                    self.增加_二级_索引F(选定序号V)
 
-                        self.标注VL[i].第二位_索引V += 1
-                        self.更新标签F(i)
-                        i += 1
-
-                    # 修改子标签的第三位_索引V
+                    # 将子标签（即四级标签）的等级升级为三级
                     j = 选定序号V + 1
                     while j < self._长度V:
-                        if 等级E.二 == self.标注VL[j].等级VE or 等级E.一 == self.标注VL[j].等级VE:
+                        if 等级E.四 == self.标注VL[j].等级VE:
+                            self.修改标签等级F(j, 等级E.三)
+                        else:
                             break
 
-                        self.标注VL[j].第三位_索引V = self.标注VL[j - 1].第三位_索引V + 1
-                        self.更新标签F(j)
                         j += 1
+
+                    # 避免对子标签的等级修改，影响到全局参数【等级G】的数值
+                    等级G = 修改后等级VE
 
                 else:
                     ui.notify("修改标签等级F-提高等级：第二位位置已满，无法提升等级")
 
-            # 从四级升为三级
-            elif 等级E.三 == 目标等级VE:
+            # 将当前标签的等级从四级升为三级
+            elif 等级E.三 == 修改后等级VE:
                 if self.计数F(等级E.三, 等级E.二) < self.第三位_长度V:
                     self.标注VL[选定序号V].第一位_索引V = self.标注VL[选定序号V - 1].第一位_索引V
                     self.标注VL[选定序号V].第二位_索引V = self.标注VL[选定序号V - 1].第二位_索引V
                     self.标注VL[选定序号V].第三位_索引V = self.标注VL[选定序号V - 1].第三位_索引V + 1
                     self.标注VL[选定序号V].第四位_索引V = 命名O.第四位_初始索引V
 
-                    self.修改等级F(目标等级VE, 选定序号V)
+                    self.修改等级F(修改后等级VE, 选定序号V)
 
                     # 当前标签之后的所有标签第三位索引+1，即向后移一位
                     i = 选定序号V + 1
                     while i < self._长度V:
-                        if 等级E.二 == self.标注VL[j].等级VE or 等级E.一 == self.标注VL[i].等级VE:
+                        if 等级E.二 == self.标注VL[i].等级VE or 等级E.一 == self.标注VL[i].等级VE:
                             break
+                        elif 等级E.三 == self.标注VL[i].等级VE:
+                            self.标注VL[i].第三位_索引V = self.标注VL[i - 1].第三位_索引V + 1
+                        elif 等级E.四 == self.标注VL[i].等级VE:
+                            self.标注VL[i].第三位_索引V += 1
 
-                        self.标注VL[i].第三位_索引V += 1
                         self.更新标签F(i)
                         i += 1
+                        print(11111111111111111111)
 
                     # 修改子标签的第四位_索引V
-                    j = 选定序号V + 1
-                    while j < self._长度V:
-                        if 等级E.四 == self.标注VL[j].等级VE:
-                            self.标注VL[j].第四位_索引V = self.标注VL[j - 1].第三位_索引V + 1
-                            self.更新标签F(j)
-                        else:
-                            break
-
-                        j += 1
+                    self.增加_四级_索引F(选定序号V)
 
                 else:
                     ui.notify("修改标签等级F-提高等级：第三位位置已满，无法提升等级")
@@ -636,29 +672,10 @@ class 标签生成器C:
 ######################################
             """)
 
-    # 计算同级标签的数量，用于与某级的长度进行比较
-    def 计数F(self, 目标等级VE: 等级E, 截至等级VE: 等级E) -> int:
-        count: int = 0
-        if 等级E.二 == 目标等级VE:
-            count = self.标注VL[当前标签G].第二位_索引V
-        elif 等级E.三 == 目标等级VE:
-            count = self.标注VL[当前标签G].第三位_索引V
-
+    def 标号重标注_减F(self, 目标等级VE: 等级E, 截至等级VE: 等级E):
         i = 当前标签G + 1
         while i < self._长度V:
-            if 目标等级VE == self.标注VL[i].等级VE:
-                count += 1
-            elif 截至等级VE == self.标注VL[i].等级VE:
-                break
-
-            i += 1
-
-        return count
-
-    def 修改_标号重标注F(self, 目标等级VE: 等级E, 截至等级VE: 等级E):
-        i = 当前标签G + 1
-        while i < self._长度V:
-            if self.标注VL[i].等级VE == 截至等级VE:
+            if 等级E.一 == self.标注VL[i].等级VE or self.标注VL[i].等级VE == 截至等级VE:
                 break  # 循环到截至等级的标签，就不需要在修改了
             else:
                 if 等级E.二 == 目标等级VE and self.标注VL[i].第二位_索引V > 0:
@@ -670,6 +687,29 @@ class 标签生成器C:
 
                 self.更新标签F(i)
             i += 1
+
+    def 增加_二级_索引F(self, 序号V: int):
+        """当前标签之后的所有标签第二位索引+1，即向后移一位"""
+        i = 序号V + 1
+        while i < self._长度V:
+            if 等级E.一 == self.标注VL[i].等级VE:
+                break
+
+            self.标注VL[i].第二位_索引V = self.标注VL[i - 1].第二位_索引V + 1
+            self.更新标签F(i)
+            i += 1
+
+    def 增加_四级_索引F(self, 序号V: int):
+        """四级标签的索引+1"""
+        j = 序号V + 1
+        while j < self._长度V:
+            if 等级E.四 == self.标注VL[j].等级VE:
+                self.标注VL[j].第四位_索引V = self.标注VL[j - 1].第四位_索引V + 1
+                self.更新标签F(j)
+            else:
+                break
+
+            j += 1
 
     def 修改等级F(self, 目标等级VE: 等级E, 序号V: int):
         global 等级G
@@ -685,26 +725,10 @@ class 标签生成器C:
             ############################################################
             """)
 
-    def 更新标签F(self, 序号V: int):
-        global 标注GL
-        self.标注VL[序号V].刷新标签F()
-
-        item: dict = [
-            self.标注VL[序号V].等级VE,
-            self.标注VL[序号V].第一位V,
-            self.标注VL[序号V].第二位V,
-            self.标注VL[序号V].第三位V,
-            self.标注VL[序号V].第四位V,
-            self.标注VL[序号V].零件名V,
-            self.标注VL[序号V].后缀V,
-        ]
-
-        标注GL[序号V] = item
-
     def 添加标签F(self, 零件名V: str = "XXX"):
         """生成指定等级的标签组件"""
 
-        global 等级G, 标注GL
+        global 标注GL
 
         if not self.是否_超出索引V:
             self.获取索引F()
@@ -712,34 +736,23 @@ class 标签生成器C:
 
             # 如果在尾部添加新建新标签
             if self._长度V == 0 or self._长度V - 1 == 当前标签G:
-                self.标签O = 标签C(
-                    序号V=self._长度V,
-                    等级V=等级G,
-                    零件名VS=零件名V,
-                    第一位_索引V=self.第一位_索引V,
-                    第二位_索引V=self.第二位_索引V,
-                    第三位_索引V=self.第三位_索引V,
-                    第四位_索引V=self.第四位_索引V,
-                    后缀V=后缀V,
-                    重名次数V=重名次数V,
+                self.生成标签F(
+                    等级G,
+                    self.第一位_索引V,
+                    self.第二位_索引V,
+                    self.第三位_索引V,
+                    self.第四位_索引V,
+                    后缀V,
+                    重名次数V,
+                    零件名V,
                 )
-                self.标签O.move(target_container=生成区域G, target_index=self._长度V)
-                self.标注VL.append(self.标签O)
-                标注GL.append(
-                    [
-                        等级G,
-                        self.标签O.第一位V,
-                        self.标签O.第二位V,
-                        self.标签O.第三位V,
-                        self.标签O.第四位V,
-                        零件名V,
-                        后缀V,
-                    ]
-                )
-            # 如果在中间添加新建新标签
+
+            # 在中间添加新建新标签
             else:
-                self.标签O = 标签C(
-                    序号V=当前标签G + 1,
+                序号V: int = self.获取_插入_序号F()
+
+                self.标签O: 标签C = 标签C(
+                    序号V=序号V,
                     等级V=等级G,
                     零件名VS=零件名V,
                     第一位_索引V=self.第一位_索引V,
@@ -749,34 +762,48 @@ class 标签生成器C:
                     后缀V=后缀V,
                     重名次数V=重名次数V,
                 )
-                self.标签O.move(target_container=生成区域G, target_index=当前标签G + 1)
-                self.标注VL.insert(当前标签G + 1, self.标签O)
+                self.标签O.move(target_container=生成区域G, target_index=序号V)
+                self.标注VL.insert(序号V, self.标签O)
                 标注GL.insert(
-                    当前标签G + 1,
+                    序号V,
                     [
                         等级G,
-                        self.标签O.第一位V,
-                        self.标签O.第二位V,
-                        self.标签O.第三位V,
-                        self.标签O.第四位V,
+                        self.第一位_索引V,
+                        self.第二位_索引V,
+                        self.第三位_索引V,
+                        self.第四位_索引V,
                         零件名V,
                         后缀V,
+                        重名次数V,
+                        self.标签O.文本V,
                     ],
                 )
 
-                # 更改后续标签的序号
-                i = 当前标签G + 2
-                while i <= self._长度V:
+                self._长度V += 1
+
+                # 更改后续标签对象的序号
+                i = 序号V + 1
+                while i < self._长度V:
                     self.标注VL[i].序号V += 1
-                    # 修改后缀，后边的标签可能与新加的重名，所以需要修改
-                    self.修改零件名F(i, self.标注VL[i].零件名VS)
-                    # TODO 修改后边的标注
                     i += 1
 
-            self._长度V += 1
+                # 更改后续标签的标号
+                if 等级E.一 == 等级G:
+                    self.修改第一位索引F(序号V, True)
+                elif 等级E.二 == 等级G:
+                    self.标号重标注_加F(序号V, 等级E.二, 等级E.一)
+                elif 等级E.三 == 等级G:
+                    self.标号重标注_加F(序号V, 等级E.三, 等级E.二)
+                elif 等级E.四 == 等级G:
+                    self.标号重标注_加F(序号V, 等级E.四, 等级E.三)
+
+                # 修改后缀，后边的标签可能与新加的重名，所以需要修改
+                self.新增是否重复F(序号V, 零件名V)
+
             self.标签O.是否_checkbox_选中 = True  # 选中新生成的标签，并切换当前标签G
             pprint(f"""
                 *****************************添加标签F-标注G********************************
+                长度：【{self._长度V}】个元素；
                 标注GL：{标注GL}
                 ####################################
                 """)
@@ -784,17 +811,141 @@ class 标签生成器C:
                 "++++++++++++++++++++++++++++++++++++++++++++++添加标签结束++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
             )
 
+    def 生成标签F(
+        self,
+        等级VE: 等级E,
+        第一位_索引V: int,
+        第二位_索引V: int,
+        第三位_索引V: int,
+        第四位_索引V: int,
+        后缀V: str,
+        重名次数V: int,
+        零件名V: str,
+    ):
+        global 标注GL
+
+        self.标签O: 标签C = 标签C(
+            序号V=self._长度V,
+            等级V=等级VE,
+            零件名VS=零件名V,
+            第一位_索引V=第一位_索引V,
+            第二位_索引V=第二位_索引V,
+            第三位_索引V=第三位_索引V,
+            第四位_索引V=第四位_索引V,
+            后缀V=后缀V,
+            重名次数V=重名次数V,
+        )
+
+        self.标签O.move(target_container=生成区域G, target_index=self._长度V)
+        self.标注VL.append(self.标签O)
+        标注GL.append(
+            [
+                等级G,
+                self.第一位_索引V,
+                self.第二位_索引V,
+                self.第三位_索引V,
+                self.第四位_索引V,
+                零件名V,
+                后缀V,
+                重名次数V,
+                self.标签O.文本V,
+            ]
+        )
+
+        self._长度V += 1
+
+    def 获取_插入_序号F(self) -> int:
+        """假设当前标签的等级是一级，那么在中间插入标签，
+        新插入的标签应该也是一级，所以要跳过其他相邻的但等级不是一的标签
+        """
+        序号V: int = 0
+        if 等级E.一 == 等级G:
+            序号V = self.筛选索引F(等级E.一)
+        elif 等级E.二 == 等级G:
+            序号V = self.筛选索引F(等级E.二)
+        elif 等级E.三 == 等级G:
+            序号V = self.筛选索引F(等级E.三)
+        elif 等级E.四 == 等级G:
+            序号V = 当前标签G + 1
+
+        return 序号V
+
+    def 筛选索引F(self, 截至等级VE: 等级E) -> int:
+        i = 当前标签G + 1
+        while i < self._长度V:
+            if self.标注VL[i].等级VE == 截至等级VE:
+                return i
+            i += 1
+
+        return 当前标签G + 1
+
+    def 修改第一位索引F(self, 序号V: int, 增加V: bool):
+        """修改【序号V】后面所有标签的的第一位索引"""
+        i = 序号V + 1
+        while i < self._长度V:
+            if 增加V:
+                self.标注VL[i].第一位_索引V += 1
+            else:
+                self.标注VL[i].第一位_索引V -= 1
+
+            self.更新标签F(i)
+
+            i += 1
+
+    def 标号重标注_加F(self, 序号V: int, 目标等级VE: 等级E, 截至等级VE: 等级E):
+        i = 序号V + 1
+        while i < self._长度V:
+            if 等级E.一 == self.标注VL[i].等级VE or self.标注VL[i].等级VE == 截至等级VE:
+                break  # 循环到截至等级的标签，就不需要在修改了
+            else:
+                if 等级E.二 == 目标等级VE:
+                    self.标注VL[i].第二位_索引V += 1
+                elif 等级E.三 == 目标等级VE:
+                    self.标注VL[i].第三位_索引V += 1
+                elif 等级E.四 == 目标等级VE:
+                    self.标注VL[i].第四位_索引V += 1
+
+                self.更新标签F(i)
+            i += 1
+
     async def 重输_零件名F(self):
         输入V = await 输入框C()
         if 输入V:
             self.修改零件名F(当前标签G, 输入V)
+
+    def 新增是否重复F(self, 序号V: int, 新增零件名V: str):
+        i = 序号V + 1
+        while i < self._长度V:
+            if 新增零件名V == self.标注VL[i].零件名V:
+                self.标注VL[i].重名次数V += 1
+                self.标注VL[i].后缀V = 后缀_默认GL[self.标注VL[i].重名次数V]
+                self.更新标签F(i)
+            i += 1
 
     def 修改零件名F(self, 序号V: int, 输入V: str):
         后缀V, 重名次数V = self.零件名_重名_后缀F(输入V)
         self.标注VL[序号V].零件名V = 输入V
         self.标注VL[序号V].后缀V = 后缀V
         self.标注VL[序号V].重名次数V = 重名次数V
+        self.更新标签F(序号V)
+
+    def 更新标签F(self, 序号V: int):
+        global 标注GL
         self.标注VL[序号V].刷新标签F()
+
+        item: dict = [
+            self.标注VL[序号V].等级VE,
+            self.标注VL[序号V].第一位_索引V,
+            self.标注VL[序号V].第二位_索引V,
+            self.标注VL[序号V].第三位_索引V,
+            self.标注VL[序号V].第四位_索引V,
+            self.标注VL[序号V].零件名V,
+            self.标注VL[序号V].后缀V,
+            self.标注VL[序号V].重名次数V,
+            self.标注VL[序号V].文本V,
+        ]
+
+        标注GL[序号V] = item
 
     def 零件名_重名_后缀F(self, 零件名V):
         result: int = 0
@@ -804,7 +955,9 @@ class 标签生成器C:
             while i <= 当前标签G:
                 if self.标注VL[i].零件名V == 零件名V:
                     result += 1
-                    print(f"后缀：{self.标注VL[i].零件名V},{零件名V},{result},{i}")
+                    print(
+                        f"标签生成器C--零件名_重名_后缀F: 标注VL[i].零件名V->{self.标注VL[i].零件名V}；零件名V->{零件名V}；result->{result}；i->{i}"
+                    )
                 i += 1
 
         if result < self.后缀_长度V:
@@ -828,7 +981,7 @@ class 标签生成器C:
                     self.第三位_索引V = 命名O.第三位_初始索引V
                     self.第四位_索引V = 命名O.第四位_初始索引V
                 else:
-                    # 当第一位索引加到头后，切换等级
+                    # 当第一位索引加到头后，自动切换等级
                     等级G = 等级E.二
                     self.获取索引F()
                     ui.notify("""
@@ -836,7 +989,7 @@ class 标签生成器C:
                         源自：标签生成器C.索引递增F
                         """)
             elif 等级E.二 == 等级G:
-                if 命名O.第二位_初始索引V < self.第二位_长度V - 1:
+                if self.计数F(等级E.二, 等级E.一) < self.第二位_长度V:
                     self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
                     self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V + 1
                     self.第三位_索引V = 命名O.第三位_初始索引V
@@ -849,7 +1002,7 @@ class 标签生成器C:
                         源自：标签生成器C.索引递增F
                         """)
             elif 等级E.三 == 等级G:
-                if 命名O.第三位_初始索引V < self.第三位_长度V - 1:
+                if self.计数F(等级E.三, 等级E.二) < self.第三位_长度V:
                     self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
                     self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V
                     self.第三位_索引V = self.标注VL[当前标签G].第三位_索引V + 1
@@ -862,17 +1015,36 @@ class 标签生成器C:
                         源自：标签生成器C.索引递增F
                         """)
             elif 等级E.四 == 等级G:
-                if 命名O.第四位_初始索引V < self.第四位_长度V - 1:
+                if self.计数F(等级E.四, 等级E.三) < self.第四位_长度V:
                     self.第一位_索引V = self.标注VL[当前标签G].第一位_索引V
                     self.第二位_索引V = self.标注VL[当前标签G].第二位_索引V
                     self.第三位_索引V = self.标注VL[当前标签G].第三位_索引V
-                    self.第四位_索引V = self.标注VL[当前标签G].第四位_索引V
+                    self.第四位_索引V = self.标注VL[当前标签G].第四位_索引V + 1
                 else:
                     self.是否_超出索引V = True
                     ui.notify("""
                         第四位已到极限！请妥善安排命名结构！
                         源自：标签生成器C.索引递增F
                         """)
+
+    # 计算同级标签的数量，用于与某级的长度进行比较
+    def 计数F(self, 目标等级VE: 等级E, 截至等级VE: 等级E) -> int:
+        count: int = 0
+        if 等级E.二 == 目标等级VE:
+            count = self.标注VL[当前标签G].第二位_索引V
+        elif 等级E.三 == 目标等级VE:
+            count = self.标注VL[当前标签G].第三位_索引V
+
+        i = 当前标签G + 1
+        while i < self._长度V:
+            if 目标等级VE == self.标注VL[i].等级VE:
+                count += 1
+            elif 截至等级VE == self.标注VL[i].等级VE:
+                break
+
+            i += 1
+
+        return count
 
 
 ####################################入口#############################################

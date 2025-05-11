@@ -83,12 +83,14 @@ class 项目C:
             CREATE TABLE IF NOT EXISTS table1 (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 "等级" INTEGER,
-                "第一位" TEXT,
-                "第二位" TEXT,
-                "第三位" TEXT,
-                "第四位" TEXT,
+                "第一位索引" INTEGER,
+                "第二位索引" INTEGER,
+                "第三位索引" INTEGER,
+                "第四位索引" INTEGER,
                 "零件名" TEXT,
-                "后缀" TEXT
+                "后缀" TEXT,
+                "重名次数" INTEGER,
+                "标签内容" TEXT
             )
             """
             self.cu.execute(create_table_query)
@@ -101,14 +103,12 @@ class 项目C:
         temp = 项目路径V / Path(常量_项目名)
         self.__初始化(temp)
 
-        # 例：data = [[4,"1","1","1","a","支杆","一"], [4,"1","1","1","a","等级","一"]]
+        # 例：data = [[4,1,1,1,"a","支杆","一",1,"111a、支杆一"],]
         try:
             # 清空旧数据
             self.conn.execute("DELETE FROM table1")
             # 插入数据
-            insert_query = (
-                "INSERT INTO table1 (等级, 第一位, 第二位, 第三位, 第四位, 零件名, 后缀) VALUES (?,?,?,?,?,?,?)"
-            )
+            insert_query = "INSERT INTO table1 (等级, 第一位索引, 第二位索引, 第三位索引, 第四位索引, 零件名, 后缀, 重名次数, 标签内容) VALUES (?,?,?,?,?,?,?,?,?)"
             for row in data:
                 self.cu.execute(insert_query, row)
             self.conn.commit()
@@ -122,7 +122,7 @@ class 项目C:
 
         try:
             # 不包含 id 列的查询
-            select_query = "SELECT 等级, 第一位, 第二位, 第三位, 第四位, 零件名, 后缀 FROM table1 ORDER BY id"
+            select_query = "SELECT 等级, 第一位索引, 第二位索引, 第三位索引, 第四位索引, 零件名, 后缀, 重名次数, 标签内容 FROM table1 ORDER BY id"
             self.cu.execute(select_query)
             rows = self.cu.fetchall()
             result = [list(row) for row in rows]
