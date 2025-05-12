@@ -2,7 +2,7 @@ r"""
 创建者: 阿斗是只猫
 创建日期: 2025-04-09
 最后编辑人: 阿斗是只猫
-最后编辑时间: 2025-05-10
+最后编辑时间: 2025-05-12
 说明:
 
     如有问题或建议，请联系微信公众号：【阿斗的小窝】
@@ -17,7 +17,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
-
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -110,39 +109,81 @@ class 命名C:
 # region###################################主界面#############################################
 @ui.page(path="/")
 async def _() -> None:
+    ui.add_head_html("""
+    <style>
+        :root {
+            --ios-blue: #007AFF;  /* 苹果系统主蓝 */
+            --ios-gray1: #F5F5F7; /* 系统浅灰背景 */
+            --ios-gray2: #E5E5EA; /* 分隔线颜色 */
+            --ios-text: #1D1D1F;  /* 主要文字颜色 */
+        }
+        body { /* 添加具体的选择器 */
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+    </style>
+""")
+
     # ************页眉************
-    with ui.header(elevated=True).style("background-color: #3874c8"):
-        ui.button(text="读取", icon="file_open", on_click=读取文件F, color="secondary")
-        ui.button(text="保存", on_click=保存文件F)
+    with (
+        ui.header(elevated=True)
+        .classes("h-14")
+        .style(
+            "background-color: rgba(255,255,255,0.8); backdrop-filter: blur(20px);"  # 毛玻璃效果
+            "border-bottom: 1px solid var(--ios-gray2);"
+        )
+    ):
+        # 按钮样式
+        btn_style = "text-color: var(--ios-text); font-weight: 500; font-size: 15px;"
+        ui.button("读取", icon="file_open", on_click=读取文件F).props(f"flat {btn_style}")
+        ui.button("保存", icon="save", on_click=保存文件F).props(f"flat {btn_style}")
         ui.space()
-        ui.button(text="命名规则", on_click=lambda: 命名规则面板C())
+        ui.button("命名规则", icon="menu", on_click=lambda: 命名规则面板C()).props(f"flat {btn_style}")
 
     # ************侧边栏************
-    with ui.left_drawer(value=True).props("width=150").classes("bg-blue-grey-1"):
-        with ui.column():
-            ui.button(text="新建", on_click=添加标签F)
-            with ui.row():
-                ui.button(text="前", on_click=提升等级F)
-                ui.button(text="后", on_click=降低等级F)
-            ui.button(text="粘贴", on_click=粘贴F)
+    with (
+        ui.left_drawer(value=True)
+        .props("width=220")
+        .classes("bg-[var(--ios-gray1)]")
+        .style("border-right: 1px solid var(--ios-gray2);")
+    ):
+        with ui.column().classes("gap-2 p-3"):  # 增加内边距和间距
+            # 本软件自带的主要功能
+            button_style = "flat size=md justify-start full-width text-color=var(--ios-text)"
+            ui.button("新建", icon="add", on_click=添加标签F).props(button_style)
+            with ui.row().classes("gap-1 items-center pl-10 pr-2 my-2").style("margin-left: -1.5rem;"):
+                ui.button(icon="arrow_back_ios", on_click=提升等级F).props("dense round").classes("shadow-sm")
+                ui.button(icon="arrow_forward_ios", on_click=降低等级F).props("dense round").classes("shadow-sm")
+            ui.button("粘贴", icon="content_copy", on_click=粘贴F).props(button_style)
 
-            ui.separator()
-            ui.button(text="输入其他标记")
+            # 分隔线使用iOS风格
+            ui.separator().props("color=var(--ios-gray2)")
 
-            ui.separator()
-            ui.button(text="绑定CAD")
-            ui.button(text="标记")
-            ui.button(text="清空")
+            # 用于输入第三方的附图标记
+            ui.button(text="输入其他标记", icon="edit").props(button_style).classes("hover:bg-[#00000008]")
 
-            ui.separator()
-            ui.button(text="选择图片")
-            ui.button(text="标记")
+            # CAD相关
+            ui.separator().props("color=var(--ios-gray2)")
+            ui.button(text="绑定CAD", icon="commit").props(button_style).classes("hover:bg-[#00000008]")
+            ui.button(text="标记", icon="cloud_upload").props(button_style).classes("hover:bg-[#00000008]")
+            ui.button(text="清空", icon="cleaning_services").props(button_style).classes("hover:bg-[#00000008]")
+
+            # 图片相关
+            ui.separator().props("color=var(--ios-gray2)")
+            ui.button(text="选择图片", icon="add_photo_alternate").props(button_style).classes("hover:bg-[#00000008]")
+            ui.button(text="标记", icon="cloud_upload").props(button_style).classes("hover:bg-[#00000008]")
 
     # ************主要内容************
-    with ui.card().style("width: 82vw; height: 85vh;"):
+    with (
+        ui.card()
+        .classes("m-4 rounded-xl shadow-none border")
+        .style(
+            "border-color: var(--ios-gray2); background: rgba(255,255,255,0.9);"
+            "width: calc(100% - 2rem); height: calc(100vh - 8rem);"
+        )
+    ):
         global 生成区域G
-        with ui.scroll_area().style("width: 80vw; height: 80vh;"):
-            生成区域G = ui.column(align_items="start").classes("w-full")
+        with ui.scroll_area().classes("h-full p-4"):  # 增加内边距
+            生成区域G = ui.column().classes("gap-4")  # 元素间距调整为系统标准的8px倍数
 
 
 class 命名规则面板C(ui.dialog):
@@ -151,36 +192,41 @@ class 命名规则面板C(ui.dialog):
     ) -> None:
         super().__init__()
 
-        with self, ui.card().classes("p-4"):
-            ui.label("**********命名规则**********")
+        with (
+            self,
+            ui.card()
+            .style("background: rgba(255,255,255,0.9)!important; border: 1px solid rgba(0,0,0,0.1)!important")
+            .classes("!p-6 !rounded-2xl !shadow-lg max-w-2xl mx-auto"),
+        ):
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("第二位初始值：").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle1 = ui.toggle({0: "无", 1: "0"}, value=1).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("第二位初始值：")
-                self.toggle1 = ui.toggle({0: "无", 1: "0"}, value=1)
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("第三位初始值：").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle2 = ui.toggle({0: "无", 1: "0"}, value=1).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("第三位初始值：")
-                self.toggle2 = ui.toggle({0: "无", 1: "0"}, value=1)
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("第四位风格：").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle3 = ui.toggle({0: "数字", 1: "字母"}, value=1).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("第四位风格：")
-                self.toggle3 = ui.toggle({0: "数字", 1: "字母"}, value=1)
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("第四位初始值：").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle4 = ui.toggle({0: "无", 1: "0/a"}, value=0).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("第四位初始值：")
-                self.toggle4 = ui.toggle({0: "无", 1: "0/a"}, value=0)
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("后缀风格：").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle5 = ui.toggle({0: "中文数字", 1: "罗马数字"}, value=0).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("后缀风格：")
-                self.toggle5 = ui.toggle({0: "中文数字", 1: "罗马数字"}, value=0)
+            with ui.row().classes("w-full items-center gap-4 py-3 px-4 hover:bg-gray-100/50 transition-colors"):
+                ui.label("连接符类型").classes("text-gray-700 flex-[1] min-w-[120px]")
+                self.toggle6 = ui.toggle({0: "无", 1: "-"}, value=0).classes("rounded-full bg-gray-200/50")
 
-            with ui.row().classes("w-full"):
-                ui.label("连接符类型")
-                self.toggle6 = ui.toggle({0: "无", 1: "-"}, value=0)
-
-            with ui.row().classes("w-full justify-end"):
-                ui.button("关闭", on_click=self.close).props("outline")
-                ui.button(text="确定", on_click=self.修改配置F)
+            with ui.row().classes("w-full justify-end space-x-3 mt-6"):
+                ui.button("关闭", on_click=self.close, color="primary").classes("px-5 py-2 text-white hover:bg-red-700")
+                ui.button(text="确定", on_click=self.修改配置F, color="positive").classes(
+                    "px-5 py-2 text-white hover:bg-danger-700 transition-colors"
+                )
 
     def 修改配置F(self):
         命名O.更新配置F(
@@ -233,7 +279,7 @@ class 标签C(ui.element):
 
         with (
             self,
-            ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0.5 items-center").style("width: fit-content;"),
+            ui.row().classes("rounded-full space-x-0.5 p-0.5 m-0 items-center").style("width: fit-content;"),
         ):
             self.动态刷新F()
 
