@@ -50,7 +50,9 @@ class 等级E(IntEnum):
 等级G: 等级E = 等级E.一
 当前标签G: int = 0  # 用于表面当前被选中的标签
 生成区域G: ui.column  # 用于标签生成，方便管理
-标注GL: list[list] = []  # 用于储存所有标注信息，例：等级 为 四级, [[等级E.四, "1", "1", "1", "a", "支杆", "一"]，]
+标注GL: list[
+    list
+] = []  # 用于储存所有标注信息，例：  标注GL：[[<等级E.一: 1>, 0, 1, 1, 0, '支杆', '', 0, '100、支杆'], "
 
 第四位_默认GL: list = []
 后缀_默认GL: list = []
@@ -465,7 +467,18 @@ def 降低等级F():
 
 
 def 粘贴F():
-    pass
+    #  标注GL：[[<等级E.一: 1>, 0, 1, 1, 0, '支杆', '', 0, '100、支杆'], "
+    temp = ""
+    length = len(标注GL)
+
+    for i, item in enumerate(标注GL):
+        # 添加当前元素
+        temp += item[8]
+        # 除了最后一个元素，其他元素后面都添加分号
+        if i < length - 1:
+            temp += "；"
+
+    ui.clipboard.write(temp)
 
 # endregion ↑↑↑
 
