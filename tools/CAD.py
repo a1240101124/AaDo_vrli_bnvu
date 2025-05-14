@@ -286,40 +286,9 @@ class CADLabelManager:
                 print(f"处理图层 {layer_name} 时出错: {e!s}")
 
 
-if __name__ == "__main__":
-    import contextlib
-
-    label_mgr = None  # 显式初始化
-    try:
-        label_mgr = CADLabelManager()
-        label_str = "100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四；300、支杆五"
-        label_mgr.add_labels(label_str)
-
-        # 检查 AutoCAD 是否处于正常状态
-        if label_mgr.acad and label_mgr.doc:
-            try:
-                label_mgr.acad.prompt("操作已完成\n")
-            except pythoncom.com_error as e:
-                print(f"与AutoCAD交互时出错: {e!s}")
-        else:
-            print("未正确连接到AutoCAD实例")
-
-        # 测试删除图层上的标签
-        label_mgr.delete_labels_on_layer("AutoLabel_Layer")
-
-    except Exception as e:
-        print(f"操作失败：{e!s}")
-    finally:
-        # 安全访问检查
-        if label_mgr and hasattr(label_mgr, "acad"):
-            with contextlib.suppress(Exception):
-                label_mgr.acad.prompt("测试程序已退出\n")
-        elif label_mgr:
-            print("CAD连接未正确建立")
-        else:
-            print("程序初始化失败")
-
 # if __name__ == "__main__":
+#     import contextlib
+
 #     label_mgr = None  # 显式初始化
 #     try:
 #         label_mgr = CADLabelManager()
@@ -334,16 +303,47 @@ if __name__ == "__main__":
 #                 print(f"与AutoCAD交互时出错: {e!s}")
 #         else:
 #             print("未正确连接到AutoCAD实例")
+
+#         # 测试删除图层上的标签
+#         label_mgr.delete_labels_on_layer("AutoLabel_Layer")
+
 #     except Exception as e:
 #         print(f"操作失败：{e!s}")
 #     finally:
 #         # 安全访问检查
-#         if label_mgr and hasattr(label_mgr, "acad") and label_mgr.acad:
-#             try:
-#                 label_mgr.acad.prompt("操作已完成\n")
-#             except pythoncom.com_error as e:
-#                 print(f"与AutoCAD交互时出错: {e!s}")
+#         if label_mgr and hasattr(label_mgr, "acad"):
+#             with contextlib.suppress(Exception):
+#                 label_mgr.acad.prompt("测试程序已退出\n")
 #         elif label_mgr:
 #             print("CAD连接未正确建立")
 #         else:
 #             print("程序初始化失败")
+
+if __name__ == "__main__":
+    label_mgr = None  # 显式初始化
+    try:
+        label_mgr = CADLabelManager()
+        label_str = "100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四；300、支杆五"
+        label_mgr.add_labels(label_str)
+
+        # 检查 AutoCAD 是否处于正常状态
+        if label_mgr.acad and label_mgr.doc:
+            try:
+                label_mgr.acad.prompt("操作已完成\n")
+            except pythoncom.com_error as e:
+                print(f"与AutoCAD交互时出错: {e!s}")
+        else:
+            print("未正确连接到AutoCAD实例")
+    except Exception as e:
+        print(f"操作失败：{e!s}")
+    finally:
+        # 安全访问检查
+        if label_mgr and hasattr(label_mgr, "acad") and label_mgr.acad:
+            try:
+                label_mgr.acad.prompt("操作已完成\n")
+            except pythoncom.com_error as e:
+                print(f"与AutoCAD交互时出错: {e!s}")
+        elif label_mgr:
+            print("CAD连接未正确建立")
+        else:
+            print("程序初始化失败")

@@ -18,6 +18,7 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
+
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -444,9 +445,11 @@ def 使用规则F():
 
 2. **完整版安装要求**  
    必须使用完整版 AutoCAD，精简版可能缺少 COM 接口，导致 CAD 功能无法使用。
+   确保CAD的字体支持汉字。
 
 3. **操作顺序**  
    请先启动 AutoCAD，再运行本软件。
+   将CAD图纸打散，确保CAD图纸中的附图标记是单行文字对象。
 
 4. **兼容性说明**  
    已在 CAD2016 环境下测试通过，其他版本兼容性未知。
