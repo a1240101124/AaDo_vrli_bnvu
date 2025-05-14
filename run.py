@@ -11,6 +11,7 @@ r"""
 """
 
 # 导入常用模块
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
@@ -53,6 +54,8 @@ class 等级E(IntEnum):
 标注GL: list[
     list
 ] = []  # 用于储存所有标注信息，例：  标注GL：[[<等级E.一: 1>, 0, 1, 1, 0, '支杆', '', 0, '100、支杆'], "
+第三方标记G: bool = False
+标注GS: str = ""  # 用于记录第三方输入的标注
 
 第四位_默认GL: list = []
 后缀_默认GL: list = []
@@ -139,7 +142,8 @@ async def _() -> None:
         ui.button("读取", icon="file_open", on_click=读取文件F).props(f"flat {btn_style}")
         ui.button("保存", icon="save", on_click=保存文件F).props(f"flat {btn_style}")
         ui.space()
-        ui.button("命名规则", icon="menu", on_click=lambda: 命名规则面板C()).props(f"flat {btn_style}")
+        ui.button("使用规则", icon="🛠️", on_click=使用规则F).props(f"flat {btn_style}")
+        ui.button("命名规则", icon="menu", on_click=show_dialog).props(f"flat {btn_style}")
 
     # ************侧边栏************
     with (
@@ -161,11 +165,12 @@ async def _() -> None:
             ui.separator().props("color=var(--ios-gray2)")
 
             # 用于输入第三方的附图标记
-            ui.button(text="输入其他标记", icon="edit").props(button_style).classes("hover:bg-[#00000008]")
+            ui.button(text="输入其他标记", icon="edit", on_click=输入其他标记F).props(button_style).classes(
+                "hover:bg-[#00000008]"
+            )
 
             # CAD相关
             ui.separator().props("color=var(--ios-gray2)")
-            ui.button(text="绑定CAD", icon="commit").props(button_style).classes("hover:bg-[#00000008]")
             ui.button(text="标记", icon="cloud_upload").props(button_style).classes("hover:bg-[#00000008]")
             ui.button(text="清空", icon="cleaning_services").props(button_style).classes("hover:bg-[#00000008]")
 
@@ -428,6 +433,49 @@ def 是否_sqlite(path: Path):
     扩展名V: str = path.suffix.lower()
     return 扩展名V in [".sqlite", ".sqlite3", ".db"]
 
+def 使用规则F():
+    with ui.dialog() as dialog, ui.card():
+        ui.markdown("""
+#### 🛠️ 使用规则
+
+##### 🔧 前期准备
+1. **AutoCAD 版本要求**  
+   需安装 2007 及以上版本，并以管理员身份运行（首次连接时需要）。
+
+2. **完整版安装要求**  
+   必须使用完整版 AutoCAD，精简版可能缺少 COM 接口，导致 CAD 功能无法使用。
+
+3. **操作顺序**  
+   请先启动 AutoCAD，再运行本软件。
+
+4. **兼容性说明**  
+   已在 CAD2016 环境下测试通过，其他版本兼容性未知。
+
+
+##### 📝 CAD 命名规则
+
+###### ✅ 标准示例
+`100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四`
+
+###### 📌 格式规范
+1. **分隔符号**  
+   - 编号与名称间使用中文顿号 `、` 分隔  
+   - 条目间使用中文分号 `；` 分隔  
+   - 末尾不添加任何符号
+
+2. **命名结构**  
+
+##### ⚠️ 注意事项
+请确保输入严格符合上述规则，否则可能导致系统无法正确解析！
+""").classes("text-left max-w-2xl")  # 设置最大宽度并左对齐  # noqa: W291
+        ui.button("关闭", on_click=dialog.close).classes("mt-4 self-end")  # 按钮右对齐并添加间距
+
+    dialog.open()
+
+
+def show_dialog():
+    dialog = 命名规则面板C()
+    dialog.open()
 
 async def 添加标签F():
     global 当前标签G
@@ -479,6 +527,83 @@ def 粘贴F():
             temp += "；"
 
     ui.clipboard.write(temp)
+
+async def 输入其他标记F():
+    global 标注GS, 第三方标记G
+    temp: str = ""
+
+    temp = await 输入框C()
+
+    valid, errors = validate_string(temp)
+    print(f"输入其他标记F->验证结果: {valid}")
+    if errors:
+        for error in errors:
+            ui.notify(f"- {error}")
+    else:
+        第三方标记G = True
+        标注GS = valid
+
+
+def validate_string(input_str):
+    """用于验证第三方的附图标记是否符合规则"""
+    errors = []
+
+    try:
+        # 基础类型检查
+        if not isinstance(input_str, str):
+            raise TypeError("输入必须为字符串类型")
+
+        # 处理空字符串
+        if not input_str.strip():
+            errors.append("错误：输入字符串为空")
+            return False, errors
+
+        # 检查非法分隔符
+        invalid_delimiters = re.findall(r"[;；,，]\s*[;；,，]", input_str)
+        if invalid_delimiters:
+            errors.append(f"错误：存在连续分隔符 {invalid_delimiters}")
+
+        # 检查首尾分隔符
+        if input_str.strip().startswith((";", "；", ",", "，")):
+            errors.append("错误：字符串以分隔符开头")
+        if input_str.strip().endswith((";", "；", ",", "，")):
+            errors.append("错误：字符串以分隔符结尾")
+
+        # 分割字符串（优先使用中文分号）
+        if "；" in input_str:
+            items = re.split(r"\s*；\s*", input_str.strip())
+            if ";" in input_str:
+                errors.append("警告：同时存在中文分号和英文分号，已按中文分号分割")
+        elif ";" in input_str:
+            items = re.split(r"\s*;\s*", input_str.strip())
+            errors.append("警告：使用英文分号作为分隔符")
+        else:
+            errors.append("错误：未找到有效分隔符")
+            return False, errors
+
+        # 过滤空项
+        items = [item for item in items if item]
+
+        # 验证每个项的格式
+        pattern = r"^\d+[a-zA-Z]?、[^;；,，]+$"
+        for idx, item in enumerate(items):
+            if not re.match(pattern, item):
+                # 检查是否缺少顿号
+                if "、" not in item:
+                    errors.append(f"第 {idx + 1} 项 '{item}'：缺少顿号")
+                else:
+                    errors.append(f"第 {idx + 1} 项 '{item}'：格式不符合要求")
+
+        # 如果没有错误，返回成功
+        if not errors:
+            return True, []
+        else:
+            return False, errors
+
+    except Exception as e:
+        errors.append(f"验证过程中出错: {e!s}")
+        return False, errors
+
 
 # endregion ↑↑↑
 
@@ -791,7 +916,8 @@ class 标签生成器C:
     def 添加标签F(self, 零件名V: str = "XXX"):
         """生成指定等级的标签组件"""
 
-        global 标注GL
+        global 标注GL, 第三方标记G
+        第三方标记G = False
 
         if not self.是否_超出索引V:
             self.获取索引F()

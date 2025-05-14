@@ -1,3 +1,15 @@
+r"""
+创建者: 阿斗是只猫
+创建日期: 2025-05-13
+最后编辑人: 阿斗是只猫
+最后编辑时间: 2025-05-14
+说明:
+
+    如有问题或建议，请联系微信公众号：【阿斗的小窝】
+
+    Copyright (c) 2025 by 阿斗是只猫, All Rights Reserved.
+"""
+
 import re
 from math import cos, radians, sin
 from time import sleep

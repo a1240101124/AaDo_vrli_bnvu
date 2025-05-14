@@ -1,19 +1,25 @@
-from datetime import datetime
-
 from nicegui import ui
 
 
-@ui.refreshable
-def time():
-    ui.label(f"Time: {datetime.now()}")
+def 使用规则F():
+    with ui.dialog():
+        ui.label("""
+                【1】前期准备：
+                    - 必须安装AutoCAD 2007及以上版本，以管理员身份运行AutoCAD（首次连接时需要）；
+                    - CAD不能使精简版之类的，需要安装完整版，否则可能不具备COM接口，无法使用本软件CAD相关功能；
+                    - 使用时，先打开CAD；
+                    - 已测试CAD2016，其他版本未测试；
+                
+                【2】CAD相关规则：
+                    - 标准示例：
+                        "100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四"
+                    - 命名规则：
+                        数字与零件名 之间通过中文“、”号分割，相邻命名之间用中文“；”分割，
+                        结尾无任何符号;
+                    - 请确保您的输入正确！！！
+                """)  # noqa: W293
 
 
-@ui.page("/global_refreshable")
-def demo():
-    time()
-    ui.button("Refresh", on_click=time.refresh)
-
-
-ui.link("Open demo", demo)
-
-ui.run()
+if __name__ in {"__main__", "__mp_main__"}:
+    使用规则F()
+    ui.run()
