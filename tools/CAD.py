@@ -21,14 +21,28 @@ from pyautocad import APoint
 
 
 class CADLabelManager:
+    _instance = None  # 类属性，用于存储单例实例
+
+    def __new__(cls):
+        """重写 __new__ 方法，确保类只有一个实例"""
+        if cls._instance is None:
+            # 如果实例尚未创建，调用父类的 __new__ 方法创建一个新的实例
+            cls._instance = super().__new__(cls)
+            # 初始化实例
+            cls._instance.__init__()
+        # 返回已创建的实例
+        return cls._instance
+
     def __init__(self):
-        # TODO 采用单例模式
-        self.acad = None
-        self.doc = None
-        self.app = None
-        self.label_layer = "AutoLabel_Layer"
-        self.label_color_index = 141  # 索引颜色
-        self.connect_cad()
+        # 确保初始化逻辑只执行一次
+        if not hasattr(self, "initialized"):
+            self.acad = None
+            self.doc = None
+            self.app = None
+            self.label_layer = "AutoLabel_Layer"
+            self.label_color_index = 141  # 索引颜色
+            self.connect_cad()
+            self.initialized = True  # 标记已初始化
 
     def connect_cad(self):
         """建立与AutoCAD的COM连接"""
@@ -301,53 +315,50 @@ def 标记F(label_str: str):
             try:
                 label_mgr.acad.prompt("CAD模块 操作已完成\n")
             except pythoncom.com_error as e:
-                ui.notify(f"与AutoCAD交互时出错: {e!s}")
+                ui.notify(f"与AutoCAD交互时出错: {e!s}-01")
         else:
-            ui.notify("未CAD模块 正确连接到AutoCAD实例")
+            ui.notify("CAD模块 未正确连接到AutoCAD实例-02")
     except Exception as e:
-        ui.notify(f"CAD模块 操作失败：{e!s}")
+        ui.notify(f"CAD模块 操作失败：{e!s}-03")
     finally:
         # 安全访问检查
         if label_mgr and hasattr(label_mgr, "acad") and label_mgr.acad:
             try:
-                label_mgr.acad.prompt("CAD模块 操作已完成\n")
+                label_mgr.acad.prompt("CAD模块 操作已完成-04\n")
             except pythoncom.com_error as e:
-                ui.notify(f"与AutoCAD交互时出错: {e!s}")
+                ui.notify(f"与AutoCAD交互时出错: {e!s}-05")
         elif label_mgr:
-            ui.notify("CAD连接未正确建立")
+            ui.notify("CAD连接未正确建立-06")
         else:
-            ui.notify("CAD模块 程序初始化失败")
+            ui.notify("CAD模块 程序初始化失败-07")
 
 
-if __name__ == "__main__":
+def 清空F():
     import contextlib
 
     label_mgr = None  # 显式初始化
     try:
         label_mgr = CADLabelManager()
-        label_str = "100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四；300、支杆五"
-        label_mgr.add_labels(label_str)
-
         # 检查 AutoCAD 是否处于正常状态
         if label_mgr.acad and label_mgr.doc:
             try:
                 label_mgr.acad.prompt("操作已完成\n")
             except pythoncom.com_error as e:
-                print(f"与AutoCAD交互时出错: {e!s}")
+                ui.notify(f"与AutoCAD交互时出错: {e!s}-08")
         else:
-            print("未正确连接到AutoCAD实例")
+            ui.notify("未正确连接到AutoCAD实例-09")
 
         # 测试删除图层上的标签
-        label_mgr.delete_labels_on_layer("AutoLabel_Layer")
+        label_mgr.delete_labels_on_layer(label_mgr.label_layer)
 
     except Exception as e:
-        print(f"操作失败：{e!s}")
+        ui.notify(f"CAD模块 操作失败：{e!s}-10")
     finally:
         # 安全访问检查
         if label_mgr and hasattr(label_mgr, "acad"):
             with contextlib.suppress(Exception):
-                label_mgr.acad.prompt("测试程序已退出\n")
+                label_mgr.acad.prompt("CAD模块 测试程序已退出\n")
         elif label_mgr:
-            print("CAD连接未正确建立")
+            ui.notify("CAD连接未正确建立-11")
         else:
-            print("程序初始化失败")
+            ui.notify("CAD模块 程序初始化失败-12")
