@@ -19,6 +19,7 @@ from pprint import pprint
 
 from nicegui import native, ui
 
+from tools import CAD
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
 from 配置M import (
@@ -172,8 +173,12 @@ async def _() -> None:
 
             # CAD相关
             ui.separator().props("color=var(--ios-gray2)")
-            ui.button(text="标记", icon="cloud_upload").props(button_style).classes("hover:bg-[#00000008]")
-            ui.button(text="清空", icon="cleaning_services").props(button_style).classes("hover:bg-[#00000008]")
+            ui.button(text="标记", icon="cloud_upload", on_click=CAD_标记F).props(button_style).classes(
+                "hover:bg-[#00000008]"
+            )
+            ui.button(text="清空", icon="cleaning_services", on_click=CAD_清空F).props(button_style).classes(
+                "hover:bg-[#00000008]"
+            )
 
             # 图片相关
             ui.separator().props("color=var(--ios-gray2)")
@@ -519,6 +524,12 @@ def 降低等级F():
 
 def 粘贴F():
     #  标注GL：[[<等级E.一: 1>, 0, 1, 1, 0, '支杆', '', 0, '100、支杆'], "
+    temp = 获取_附图标记F()
+
+    ui.clipboard.write(temp)
+
+
+def 获取_附图标记F() -> str:
     temp = ""
     length = len(标注GL)
 
@@ -529,7 +540,8 @@ def 粘贴F():
         if i < length - 1:
             temp += "；"
 
-    ui.clipboard.write(temp)
+    return temp
+
 
 async def 输入其他标记F():
     global 标注GS, 第三方标记G
@@ -607,7 +619,13 @@ def validate_string(input_str):
         errors.append(f"验证过程中出错: {e!s}")
         return False, errors
 
+def CAD_标记F():
+    待插入V: str = 标注GS if 第三方标记G else 获取_附图标记F()
+    CAD.标记F(待插入V)
 
+
+def CAD_清空F():
+    pass
 # endregion ↑↑↑
 
 ####################################生成器#############################################
