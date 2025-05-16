@@ -154,37 +154,109 @@ class CADLabelManager:
         )
         return final_offset
 
+    # def add_labels(self, label_str):
+    #     """添加标签到当前图纸（支持单行/多行文字）"""
+    #     label_map = self.parse_labels(label_str)
+    #     layer = self.create_layer()
+
+    #     model_space = self.doc.ModelSpace
+    #     counter = 0
+
+    #     for obj in self.acad.iter_objects(["Text", "MText"]):
+    #         if not obj or obj.ObjectName not in ["AcDbText", "AcDbMText"]:
+    #             continue
+    #         try:
+    #             if obj.ObjectName == "AcDbText":
+    #                 content = obj.TextString.strip()
+    #             elif obj.ObjectName == "AcDbMText":
+    #                 raw_content = obj.TextString
+    #                 content = re.sub(r"\\.*?[;}]", "", raw_content)
+    #                 content = content.replace("\\L", "").replace("\\P", "\n")
+    #                 content = content.strip()
+
+    #             print(f"DEBUG - 发现文字对象: {content}")
+
+    #             if content in label_map:
+    #                 insert_point = APoint(obj.InsertionPoint)
+    #                 height = obj.Height
+    #                 rotation = obj.Rotation
+
+    #                 # 计算自适应偏移量
+    #                 offset = self.calculate_adaptive_offset(content, label_map[content], height)
+
+    #                 # 根据文本旋转角度调整偏移方向
+    #                 rotation_rad = radians(rotation)
+    #                 delta_x = offset * cos(rotation_rad)
+    #                 delta_y = offset * sin(rotation_rad)
+
+    #                 new_point = APoint(insert_point.x + delta_x, insert_point.y + delta_y)
+
+    #                 # 检查图层状态
+    #                 if layer and layer.LayerOn and not layer.Freeze:
+    #                     try:
+    #                         # 尝试添加文本
+    #                         new_text = model_space.AddText(label_map[content], new_point, height)
+    #                         new_text.Layer = layer.Name
+    #                         new_text.rotation = rotation
+    #                         new_text.Alignment = 0
+    #                         new_text.Color = self.label_color_index
+    #                         counter += 1
+    #                         if counter % 10 == 0:
+    #                             self.doc.Regen(0)
+    #                             sleep(0.1)
+    #                     except Exception as e:
+    #                         print(f"添加文本时出错: {e!s}")
+    #                         # 尝试重新获取图层并继续
+    #                         layer = self.create_layer()
+    #                 else:
+    #                     print(f"图层 {self.label_layer} 状态异常，无法添加文本")
+    #                     # 尝试修复图层状态
+    #                     layer = self.create_layer()
+
+    #         except Exception as e:
+    #             print(f"处理对象时出错：{e!s}")
+    #             continue
+
+    #     print(f"成功添加 {counter} 个标签")
+    #     self.doc.Regen(0)
     def add_labels(self, label_str):
-        """添加标签到当前图纸（支持单行/多行文字）"""
+        """添加标签到当前图纸（支持单行/多行文字和多重引线）"""
         label_map = self.parse_labels(label_str)
         layer = self.create_layer()
 
         model_space = self.doc.ModelSpace
         counter = 0
 
-        for obj in self.acad.iter_objects(["Text", "MText"]):
-            if not obj or obj.ObjectName not in ["AcDbText", "AcDbMText"]:
+        for obj in self.acad.iter_objects(["Text", "MText", "MLeader"]):  # 增加对 MLeader 的支持
+            if not obj or obj.ObjectName not in ["AcDbText", "AcDbMText", "AcDbMLeader"]:
                 continue
             try:
                 if obj.ObjectName == "AcDbText":
                     content = obj.TextString.strip()
+                    insert_point = APoint(obj.InsertionPoint)
+                    height = obj.Height
+                    rotation = obj.Rotation
                 elif obj.ObjectName == "AcDbMText":
                     raw_content = obj.TextString
                     content = re.sub(r"\\.*?[;}]", "", raw_content)
                     content = content.replace("\\L", "").replace("\\P", "\n")
                     content = content.strip()
-
-                print(f"DEBUG - 发现文字对象: {content}")
-
-                if content in label_map:
                     insert_point = APoint(obj.InsertionPoint)
                     height = obj.Height
                     rotation = obj.Rotation
+                elif obj.ObjectName == "AcDbMLeader":  # 处理多重引线
+                    content = obj.Content  # 获取多重引线的文本内容
+                    insert_point = APoint(obj.BlockReference.InsertionPoint)  # 获取多重引线的插入点
+                    height = obj.TextHeight  # 获取多重引线的文本高度
+                    rotation = obj.Rotation  # 获取多重引线的旋转角度
 
+                print(f"DEBUG - 发现对象: {content} ({obj.ObjectName})")
+
+                if content in label_map:
                     # 计算自适应偏移量
                     offset = self.calculate_adaptive_offset(content, label_map[content], height)
 
-                    # 根据文本旋转角度调整偏移方向
+                    # 根据对象旋转角度调整偏移方向
                     rotation_rad = radians(rotation)
                     delta_x = offset * cos(rotation_rad)
                     delta_y = offset * sin(rotation_rad)
@@ -362,3 +434,35 @@ def 清空F():
             ui.notify("CAD连接未正确建立-11")
         else:
             ui.notify("CAD模块 程序初始化失败-12")
+
+
+if __name__ in {"__main__", "__mp_main__"}:
+    label_str = "100、支杆；110、支杆一；111、支杆二；111a、支杆三；200、支杆四；300、支杆五"
+    label_mgr = None  # 显式初始化
+
+    try:
+        label_mgr = CADLabelManager()
+
+        label_mgr.add_labels(label_str)
+
+        # 检查 AutoCAD 是否处于正常状态
+        if label_mgr.acad and label_mgr.doc:
+            try:
+                label_mgr.acad.prompt("CAD模块 操作已完成\n")
+            except pythoncom.com_error as e:
+                print(f"与AutoCAD交互时出错: {e!s}-01")
+        else:
+            print("CAD模块 未正确连接到AutoCAD实例-02")
+    except Exception as e:
+        print(f"CAD模块 操作失败：{e!s}-03")
+    finally:
+        # 安全访问检查
+        if label_mgr and hasattr(label_mgr, "acad") and label_mgr.acad:
+            try:
+                label_mgr.acad.prompt("CAD模块 操作已完成-04\n")
+            except pythoncom.com_error as e:
+                print(f"与AutoCAD交互时出错: {e!s}-05")
+        elif label_mgr:
+            print("CAD连接未正确建立-06")
+        else:
+            print("CAD模块 程序初始化失败-07")
