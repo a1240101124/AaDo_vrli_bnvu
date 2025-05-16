@@ -18,7 +18,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
-
 from tools import CAD
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
@@ -553,10 +552,10 @@ async def 输入其他标记F():
     print(f"输入其他标记F->验证结果: {valid}")
     if errors:
         for error in errors:
-            ui.notify(f"- {error}")
-    else:
+            ui.notify(f"输入其他标记F-字符串验证错误：- {error}")
+    if valid:
         第三方标记G = True
-        标注GS = valid
+        标注GS = temp
 
 
 def validate_string(input_str):
