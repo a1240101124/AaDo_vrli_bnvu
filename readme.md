@@ -1,6 +1,6 @@
 #依赖
-- nicegui pywin32 pywebview pyautocad
-- 必须安装AutoCAD 2007及以上版本，以管理员身份运行AutoCAD（首次连接时需要）
+- python3.12 nicegui pywin32 pywebview pyautocad
+- 必须安装AutoCAD 2010及以上版本，以管理员身份运行AutoCAD（首次连接时需要）
 - CAD不能使精简版之类的，需要安装完整版，否则可能不具备COM接口，无法使用本软件CAD相关功能
 - 使用时，先打开CAD
 - 已测试CAD2016
