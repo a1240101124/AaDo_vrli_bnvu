@@ -1,3 +1,5 @@
 测试.py
 .venv/
 .vscode/
+./build
+./dist

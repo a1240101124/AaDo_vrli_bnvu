@@ -18,7 +18,6 @@ from pathlib import Path
 from pprint import pprint
 
 from nicegui import native, ui
-
 from tools import CAD
 from tools.local_file_picker import local_file_picker
 from 读写M import 配置C, 项目C
@@ -1266,8 +1265,9 @@ if __name__ in {"__main__", "__mp_main__"}:
     ui.run(
         title=常量_标题,
         favicon=图标路径G,
-        reload=True,  # 打包时，记得禁用
+        reload=False,  # 打包时，记得禁用
         port=native.find_open_port(),
         native=True,
         window_size=(1030, 760),
     )
+# nicegui-pack --windowed  --icon=AaDo_vrli_bnvu\static\app_icon.ico --add-data AaDo_vrli_bnvu\static:static --name "阿斗附图标记" AaDo_vrli_bnvu\run.py
